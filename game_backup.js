@@ -34,11 +34,12 @@ class Game {
       fireboy: 0,
       watergirl: 0,
     };
-    this.defenseDuration = 3000; // 5 seconds
-    this.defenseCooldownTime = 10000; // 10 seconds cooldown
+    this.defenseDuration = 3; // 3 seconds
+    this.defenseCooldownTime = 10; // 10 seconds cooldown (in seconds)
 
     this.fireboyScore = 0;
     this.watergirlScore = 0;
+    this.doorWinner = null; // Track who won the door in level 1
 
     this.keys = {};
     this.lastTime = 0;
@@ -353,6 +354,16 @@ class Game {
     document.getElementById("objectiveText").textContent =
       "Work together to reach the goal!";
 
+    // Show door winner information
+    if (this.doorWinner) {
+      this.addTextEffect(
+        this.width / 2,
+        100,
+        `${this.doorWinner.toUpperCase()} GOT THE POINT FROM LEVEL 1!`,
+        this.doorWinner === "fireboy" ? "#ff6b35" : "#4a90e2"
+      );
+    }
+
     // Create platforms
     this.platforms = [
       new Platform(0, this.height - 50, this.width, 50, "#8B4513"),
@@ -620,12 +631,51 @@ class Game {
       winner === "fireboy" ? "#ff6b35" : "#4a90e2"
     );
 
-    // Reset door
+    // Show level transition message
+    this.addTextEffect(
+      this.width / 2,
+      this.height / 2,
+      "TRANSITIONING TO LEVEL 2...",
+      "#ffff00"
+    );
+
+    // Transition to level 2 after a short delay
+    setTimeout(() => {
+      this.transitionToLevel2(winner);
+    }, 2000);
+
+    // Update UI
+    this.updateUI();
+  }
+
+  transitionToLevel2(winner) {
+    // Store the winner for level 2
+    this.doorWinner = winner;
+    
+    // Transition to level 2
+    this.currentLevel = 2;
+    this.createLevel(this.currentLevel);
+    
+    // Reset door system for level 2
     this.door = null;
     this.doorActive = false;
     this.doorCountdown = 0;
-    this.doorSpawnDelay = 15000 + Math.random() * 15000; // Reset for next door
-
+    this.doorSpawnDelay = 15000 + Math.random() * 15000;
+    
+    // Show level 2 message
+    this.addTextEffect(
+      this.width / 2,
+      this.height / 2 - 50,
+      "LEVEL 2: COOPERATIVE MODE",
+      "#ffff00"
+    );
+    this.addTextEffect(
+      this.width / 2,
+      this.height / 2 - 20,
+      `${winner.toUpperCase()} GOT THE POINT!`,
+      winner === "fireboy" ? "#ff6b35" : "#4a90e2"
+    );
+    
     // Update UI
     this.updateUI();
   }
@@ -701,14 +751,14 @@ class Game {
     // Check if defense duration has expired
     if (
       this.activeDefense.fireboy &&
-      Date.now() - this.defenseStartTime.fireboy >= this.defenseDuration
+      (Date.now() - this.defenseStartTime.fireboy) / 1000 >= this.defenseDuration
     ) {
       this.activeDefense.fireboy = false;
       this.defenseCooldown.fireboy = this.defenseCooldownTime;
     }
     if (
       this.activeDefense.watergirl &&
-      Date.now() - this.defenseStartTime.watergirl >= this.defenseDuration
+      (Date.now() - this.defenseStartTime.watergirl) / 1000 >= this.defenseDuration
     ) {
       this.activeDefense.watergirl = false;
       this.defenseCooldown.watergirl = this.defenseCooldownTime;
@@ -1231,9 +1281,8 @@ class Game {
       // Defense status
       if (this.activeDefense.fireboy) {
         const timeLeft = Math.ceil(
-          (this.defenseDuration -
-            (Date.now() - this.defenseStartTime.fireboy)) /
-            1000
+          this.defenseDuration -
+            (Date.now() - this.defenseStartTime.fireboy) / 1000
         );
         this.ctx.fillStyle = "#ff6b35";
         this.ctx.font = "bold 14px Arial";
@@ -1265,9 +1314,8 @@ class Game {
       // Defense status
       if (this.activeDefense.watergirl) {
         const timeLeft = Math.ceil(
-          (this.defenseDuration -
-            (Date.now() - this.defenseStartTime.watergirl)) /
-            1000
+          this.defenseDuration -
+            (Date.now() - this.defenseStartTime.watergirl) / 1000
         );
         this.ctx.fillStyle = "#4a90e2";
         this.ctx.font = "bold 14px Arial";
