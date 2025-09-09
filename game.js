@@ -23,6 +23,7 @@ class Game {
     
     // Active defense system
     this.activeDefense = {
+      
       fireboy: false,
       watergirl: false
     };
@@ -70,9 +71,10 @@ class Game {
       fireboySprite: null,
       watergirlSprite: null,
       doorSprite: null,
+      platformSprite: null,
     };
     this.assetsLoaded = 0;
-    this.totalAssets = 4;
+    this.totalAssets = 5;
 
     this.init();
   }
@@ -117,6 +119,14 @@ class Game {
       this.checkAssetsLoaded();
     };
     this.assets.doorSprite.src = "assets/door-asset.png";
+
+    // Load Platform sprite
+    this.assets.platformSprite = new Image();
+    this.assets.platformSprite.onload = () => {
+      this.assetsLoaded++;
+      this.checkAssetsLoaded();
+    };
+    this.assets.platformSprite.src = "assets/platform.png";
   }
 
   checkAssetsLoaded() {
@@ -1683,33 +1693,45 @@ class Platform {
   }
 
   render(ctx) {
-    // Create a more appealing platform with gradient and shadow
-    const gradient = ctx.createLinearGradient(
-      this.x,
-      this.y,
-      this.x,
-      this.y + this.height
-    );
-    gradient.addColorStop(0, "#8B4513");
-    gradient.addColorStop(0.5, "#A0522D");
-    gradient.addColorStop(1, "#654321");
+    // Use platform asset if available, otherwise fallback to gradient
+    if (window.game && window.game.assets && window.game.assets.platformSprite) {
+      // Draw platform using the asset image
+      ctx.drawImage(
+        window.game.assets.platformSprite,
+        this.x,
+        this.y,
+        this.width,
+        this.height
+      );
+    } else {
+      // Fallback to gradient platform if asset not loaded
+      const gradient = ctx.createLinearGradient(
+        this.x,
+        this.y,
+        this.x,
+        this.y + this.height
+      );
+      gradient.addColorStop(0, "#8B4513");
+      gradient.addColorStop(0.5, "#A0522D");
+      gradient.addColorStop(1, "#654321");
 
-    ctx.fillStyle = gradient;
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
 
-    // Add a subtle border
-    ctx.strokeStyle = "#654321";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(this.x, this.y, this.width, this.height);
+      // Add a subtle border
+      ctx.strokeStyle = "#654321";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(this.x, this.y, this.width, this.height);
 
-    // Add some texture lines
-    ctx.strokeStyle = "#8B4513";
-    ctx.lineWidth = 1;
-    for (let i = 0; i < this.width; i += 20) {
-      ctx.beginPath();
-      ctx.moveTo(this.x + i, this.y);
-      ctx.lineTo(this.x + i, this.y + this.height);
-      ctx.stroke();
+      // Add some texture lines
+      ctx.strokeStyle = "#8B4513";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < this.width; i += 20) {
+        ctx.beginPath();
+        ctx.moveTo(this.x + i, this.y);
+        ctx.lineTo(this.x + i, this.y + this.height);
+        ctx.stroke();
+      }
     }
   }
 }
