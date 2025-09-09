@@ -991,9 +991,22 @@ class Game {
     if (!this.fireboy || !this.watergirl) return;
 
     if (this.gameMode === "competitive") {
-      // Don't end the game when a character dies - let them become unplayable
-      // The surviving character can continue to reach the door
+      // Check if a character has died and spawn door immediately
+      if (this.fireboy.health <= 0 || this.watergirl.health <= 0) {
+        // If door hasn't spawned yet, spawn it immediately
+        if (!this.door && !this.doorActive) {
+          this.spawnDoor();
+        }
+      }
     } else if (this.gameMode === "cooperative") {
+      // Check if a character has died and spawn door immediately
+      if (this.fireboy.health <= 0 || this.watergirl.health <= 0) {
+        // If door hasn't spawned yet, spawn it immediately
+        if (!this.door && !this.doorActive) {
+          this.spawnDoor();
+        }
+      }
+      
       // Check if all goals are activated (only if there are goals)
       if (this.goals.length > 0) {
         const allGoalsActivated = this.goals.every((goal) => goal.activated);
