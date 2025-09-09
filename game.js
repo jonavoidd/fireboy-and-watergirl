@@ -123,7 +123,7 @@ class Game {
       this.assetsLoaded++;
       this.checkAssetsLoaded();
     };
-    this.assets.doorSprite.src = "assets/door-asset.png";
+    this.assets.doorSprite.src = "assets/door.png";
 
     // Load Platform sprite
     this.assets.platformSprite = new Image();
@@ -552,7 +552,7 @@ class Game {
   spawnDoor() {
     // Find a random platform to spawn the door on
     const availablePlatforms = this.platforms.filter(
-      (platform) => platform.y < this.height - 100 && platform.width > 80
+      (platform) => platform.y < this.height - 100 && platform.width > 100
     );
 
     if (availablePlatforms.length > 0) {
@@ -561,8 +561,8 @@ class Game {
           Math.floor(Math.random() * availablePlatforms.length)
         ];
       this.door = new Door(
-        randomPlatform.x + (randomPlatform.width - 60) / 2,
-        randomPlatform.y - 60,
+        randomPlatform.x + (randomPlatform.width - 80) / 2,
+        randomPlatform.y - 80,
         this.assets.doorSprite
       );
       this.doorActive = true;
@@ -2673,8 +2673,8 @@ class Door {
   constructor(x, y, sprite) {
     this.x = x;
     this.y = y;
-    this.width = 60;
-    this.height = 60;
+    this.width = 80;
+    this.height = 80;
     this.sprite = sprite;
     this.glowIntensity = 0;
     this.glowDirection = 1;
@@ -2694,12 +2694,6 @@ class Door {
 
   render(ctx) {
     ctx.save();
-
-    // Draw glow effect
-    if (this.glowIntensity > 0) {
-      ctx.shadowColor = "#ffff00";
-      ctx.shadowBlur = 20 * this.glowIntensity;
-    }
 
     // Draw door sprite or fallback rectangle
     if (this.sprite) {
@@ -2736,15 +2730,6 @@ class Door {
       );
       ctx.fill();
     }
-
-    // Draw "DOOR" text above
-    ctx.fillStyle = "#ffff00";
-    ctx.font = "bold 12px Arial";
-    ctx.textAlign = "center";
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.strokeText("DOOR", this.x + this.width / 2, this.y - 5);
-    ctx.fillText("DOOR", this.x + this.width / 2, this.y - 5);
 
     ctx.restore();
   }
