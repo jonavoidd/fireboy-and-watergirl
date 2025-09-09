@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fireboy vs Watergirl - Level 2: Competitive Battle</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Level 2 Specific Styles */
+      @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+      
+      body {
+        font-family: 'MedievalSharp', cursive;
+        background: #0a0a0a;
+        color: #d4af37;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      #gameHeader {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border-bottom: 3px solid #d4af37;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+      }
+
+      #gameHeader h1 {
+        color: #d4af37;
+        font-size: 1.8em;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+
+      #gameInfo {
+        display: flex;
+        gap: 30px;
+        align-items: center;
+        color: #d4af37;
+        font-size: 1.1em;
+      }
+
+      #gameInfo > div {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 8px 15px;
+        border-radius: 5px;
+        border: 1px solid #8B7355;
+      }
+
+      #scoreInfo {
+        display: flex;
+        gap: 20px;
+      }
+
+      #fireboyScore {
+        color: #ff6b35;
+        font-weight: bold;
+      }
+
+      #watergirlScore {
+        color: #4a90e2;
+        font-weight: bold;
+      }
+
+      #gameArea {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 120px);
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        overflow: hidden;
+      }
+
+      #gameCanvas {
+        display: block;
+        background: 
+          radial-gradient(ellipse at center, rgba(139, 69, 19, 0.2) 0%, rgba(0, 0, 0, 0.9) 70%),
+          repeating-linear-gradient(
+            90deg,
+            #2a1810 0px,
+            #3a2420 40px,
+            #2a1810 80px
+          );
+        border: 2px solid #d4af37;
+        box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+      }
+
+      #gameUI {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid #d4af37;
+        border-radius: 10px;
+        padding: 15px;
+        max-width: 300px;
+        font-size: 0.9em;
+      }
+
+      #gameUI h3 {
+        color: #d4af37;
+        margin: 0 0 10px 0;
+        font-size: 1.2em;
+      }
+
+      #gameUI p {
+        margin: 5px 0;
+        color: #8B7355;
+        line-height: 1.4;
+      }
+
+      #gameUI strong {
+        color: #d4af37;
+      }
+
+      #objectiveText {
+        color: #ff6b35;
+        font-weight: bold;
+      }
+
+      #gameControls {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        z-index: 100;
+      }
+
+      #gameControls button {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        padding: 10px 20px;
+        font-size: 1em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      #gameControls button:hover {
+        background: linear-gradient(135deg, #4a2818, #6a3828);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+      }
+
+      #gameControls button:active {
+        transform: translateY(0);
+      }
+
+      #gameOverScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        font-family: 'MedievalSharp', cursive;
+      }
+
+      #gameOverContent {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 3px solid #d4af37;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 
+          inset 0 0 30px rgba(0,0,0,0.5),
+          0 10px 30px rgba(0,0,0,0.8);
+      }
+
+      #gameOverTitle {
+        color: #d4af37;
+        font-size: 2.5em;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+
+      #gameOverMessage {
+        color: #8B7355;
+        font-size: 1.3em;
+        margin-bottom: 30px;
+      }
+
+      #restartBtn {
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        padding: 12px 25px;
+        font-size: 1.1em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 5px;
+      }
+
+      #restartBtn:hover {
+        background: linear-gradient(135deg, #2a1810, #3a2420);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* Pause Menu Styles */
+      #pauseMenu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        font-family: 'MedievalSharp', cursive;
+      }
+
+      #pauseContent {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 3px solid #d4af37;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 
+          inset 0 0 30px rgba(0,0,0,0.5),
+          0 10px 30px rgba(0,0,0,0.8);
+        animation: pauseSlideIn 0.3s ease-out;
+      }
+
+      @keyframes pauseSlideIn {
+        from {
+          opacity: 0;
+          transform: scale(0.8) translateY(-50px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      #pauseContent h2 {
+        color: #d4af37;
+        font-size: 2.5em;
+        margin-bottom: 30px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        letter-spacing: 2px;
+      }
+
+      .pause-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 250px;
+      }
+
+      .pause-btn {
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        padding: 12px 25px;
+        font-size: 1.1em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 5px;
+      }
+
+      .pause-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+        transition: left 0.5s ease;
+      }
+
+      .pause-btn:hover::before {
+        left: 100%;
+      }
+
+      .pause-btn:hover {
+        background: linear-gradient(135deg, #2a1810, #3a2420);
+        transform: translateY(-2px);
+        box-shadow: 
+          inset 0 0 20px rgba(212, 175, 55, 0.1),
+          0 5px 15px rgba(0,0,0,0.6);
+        text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+      }
+
+      .pause-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Level 2 specific indicators */
+      .level-indicator {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid #d4af37;
+        border-radius: 10px;
+        padding: 10px 15px;
+        color: #d4af37;
+        font-size: 1.1em;
+        font-weight: bold;
+      }
+
+      .competitive-mode {
+        color: #ff6b35;
+        text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="gameHeader">
+      <h1>🔥 vs 💧 Level 2: Competitive Battle</h1>
+      <div id="gameInfo">
+        <div id="levelInfo">Level: <span id="currentLevel">2</span></div>
+        <div id="modeInfo">
+          Mode: <span id="currentMode" class="competitive-mode">Competitive</span>
+        </div>
+        <div id="scoreInfo">
+          <span id="fireboyScore">Fireboy: 0</span>
+          <span id="watergirlScore">Watergirl: 0</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameArea">
+      <div class="level-indicator">
+        🏆 COMPETITIVE BATTLE
+      </div>
+      
+      <canvas id="gameCanvas" width="1000" height="600"></canvas>
+      
+      <div id="gameUI">
+        <h3>Level 2: Competitive Battle</h3>
+        <p>
+          <strong>Objective:</strong> <span id="objectiveText">Defeat your opponent in intense 1v1 combat!</span>
+        </p>
+        <p>
+          <strong>Special Features:</strong>
+        </p>
+        <p>• Faster projectile speeds</p>
+        <p>• Reduced defense cooldowns</p>
+        <p>• More aggressive AI</p>
+        <p>• Power-up spawns every 10 seconds</p>
+        <p>• First to 5 kills wins!</p>
+      </div>
+    </div>
+
+    <div id="gameControls">
+      <button id="startBtn">Start Battle</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="resetBtn">Reset Level</button>
+      <button id="backToMapBtn">Back to Map</button>
+    </div>
+
+    <div id="gameOverScreen" class="hidden">
+      <div id="gameOverContent">
+        <h2 id="gameOverTitle">Battle Complete!</h2>
+        <p id="gameOverMessage">Fireboy Wins!</p>
+        <button id="restartBtn">Battle Again</button>
+        <button id="nextLevelBtn" style="display: none">Next Level</button>
+        <button id="backToMapBtn2">Back to Map</button>
+      </div>
+    </div>
+
+    <!-- Pause Menu -->
+    <div id="pauseMenu" class="hidden">
+      <div id="pauseContent">
+        <h2>Battle Paused</h2>
+        <div class="pause-buttons">
+          <button id="resumeBtn" class="pause-btn">Resume Battle</button>
+          <button id="restartPauseBtn" class="pause-btn">Restart Level</button>
+          <button id="mainMenuBtn" class="pause-btn">Main Menu</button>
+          <button id="mapSelectionBtn" class="pause-btn">Map Selection</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="pointSystem.js"></script>
+    <script src="game.js"></script>
+    
+    <script>
+      // Level 2 specific game initialization
+      class Level2Game extends Game {
+        constructor() {
+          super();
+          this.currentLevel = 2;
+          this.gameMode = "competitive";
+          this.maxKills = 5; // First to 5 kills wins
+          this.killCount = {
+            fireboy: 0,
+            watergirl: 0
+          };
+          
+          // Level 2 specific settings
+          this.projectileSpeed = 8; // Faster than tutorial
+          this.defenseCooldownTime = 8000; // Reduced from 10s to 8s
+          this.powerUpSpawnRate = 10000; // Every 10 seconds
+          this.enemyAggression = 1.5; // More aggressive AI
+        }
+
+        createLevel(levelNumber) {
+          super.createLevel(levelNumber);
+          
+          // Level 2 specific setup
+          this.setupCompetitiveLevel();
+        }
+
+        setupCompetitiveLevel() {
+          // Create more challenging platforms
+          this.platforms = [
+            // Main platforms
+            { x: 100, y: 500, width: 200, height: 20, type: 'normal' },
+            { x: 350, y: 400, width: 150, height: 20, type: 'normal' },
+            { x: 550, y: 300, width: 200, height: 20, type: 'normal' },
+            { x: 800, y: 500, width: 200, height: 20, type: 'normal' },
+            
+            // Floating platforms for more dynamic gameplay
+            { x: 250, y: 300, width: 100, height: 15, type: 'floating' },
+            { x: 450, y: 200, width: 100, height: 15, type: 'floating' },
+            { x: 700, y: 400, width: 100, height: 15, type: 'floating' },
+            
+            // Ground platforms
+            { x: 0, y: 580, width: 1000, height: 20, type: 'ground' }
+          ];
+
+          // Spawn initial power-ups
+          this.spawnPowerUp();
+          
+          // Update UI for competitive mode
+          document.getElementById('objectiveText').textContent = 'First to 5 kills wins!';
+        }
+
+        spawnPowerUp() {
+          // More frequent power-up spawning for competitive play
+          const powerUpTypes = ['speed', 'damage', 'defense', 'health'];
+          const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+          
+          const powerUp = {
+            x: Math.random() * (this.width - 40) + 20,
+            y: Math.random() * (this.height - 200) + 100,
+            width: 20,
+            height: 20,
+            type: randomType,
+            collected: false,
+            spawnTime: Date.now()
+          };
+          
+          this.powerUps.push(powerUp);
+        }
+
+        update(deltaTime) {
+          super.update(deltaTime);
+          
+          // Level 2 specific updates
+          this.updateCompetitiveFeatures(deltaTime);
+        }
+
+        updateCompetitiveFeatures(deltaTime) {
+          // Spawn power-ups more frequently
+          if (Date.now() - this.lastPowerUpSpawn > this.powerUpSpawnRate) {
+            this.spawnPowerUp();
+            this.lastPowerUpSpawn = Date.now();
+          }
+
+          // Check for kill count victory
+          if (this.killCount.fireboy >= this.maxKills) {
+            this.endGame("Fireboy Wins!", "fireboy");
+          } else if (this.killCount.watergirl >= this.maxKills) {
+            this.endGame("Watergirl Wins!", "watergirl");
+          }
+        }
+
+        onPlayerHit(player, projectile) {
+          super.onPlayerHit(player, projectile);
+          
+          // Track kills for competitive mode
+          if (player.health <= 0) {
+            if (player === this.fireboy) {
+              this.killCount.watergirl++;
+            } else {
+              this.killCount.fireboy++;
+            }
+            
+            // Respawn player after short delay
+            setTimeout(() => {
+              this.respawnPlayer(player);
+            }, 2000);
+          }
+        }
+
+        respawnPlayer(player) {
+          // Respawn player at safe location
+          player.x = player === this.fireboy ? 150 : 750;
+          player.y = 500;
+          player.health = player.maxHealth;
+          player.velocityX = 0;
+          player.velocityY = 0;
+        }
+
+        endGame(message, winner) {
+          this.gameState = "gameOver";
+          document.getElementById('gameOverMessage').textContent = message;
+          document.getElementById('gameOverTitle').textContent = "Battle Complete!";
+          
+          // Show appropriate buttons
+          document.getElementById('restartBtn').style.display = 'inline-block';
+          document.getElementById('nextLevelBtn').style.display = 'none';
+          document.getElementById('backToMapBtn2').style.display = 'inline-block';
+          
+          document.getElementById('gameOverScreen').classList.remove('hidden');
+          
+          // Update points system
+          if (window.updatePoints) {
+            window.updatePoints(winner, 100); // Bonus points for level 2 victory
+          }
+          
+          // Unlock next level
+          if (window.unlockNextLevel) {
+            window.unlockNextLevel(2, 3); // 3 stars for completing level 2
+          }
+        }
+
+        resetLevel() {
+          super.resetLevel();
+          this.killCount = { fireboy: 0, watergirl: 0 };
+          this.setupCompetitiveLevel();
+        }
+      }
+
+      // Initialize Level 2 Game
+      let game = null;
+
+      // Game control functions
+      function startGame() {
+        if (!game) {
+          game = new Level2Game();
+        } else {
+          game.resetLevel();
+          game.gameState = "playing";
+        }
+        document.getElementById('startBtn').textContent = 'Restart Battle';
+      }
+
+      function pauseGame() {
+        if (game) {
+          game.gameState = "paused";
+          document.getElementById('pauseMenu').classList.remove('hidden');
+        }
+      }
+
+      function resumeGame() {
+        if (game) {
+          game.gameState = "playing";
+          document.getElementById('pauseMenu').classList.add('hidden');
+        }
+      }
+
+      function resetLevel() {
+        if (game) {
+          game.resetLevel();
+        }
+      }
+
+      function goToMainMenu() {
+        window.location.href = 'main-menu.html';
+      }
+
+      function goToMapSelection() {
+        window.location.href = 'map-selection.html';
+      }
+
+      function restartGame() {
+        if (game) {
+          game.resetLevel();
+          game.gameState = "playing";
+        }
+        document.getElementById('gameOverScreen').classList.add('hidden');
+      }
+
+      // Event listeners
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize game
+        game = new Level2Game();
+        
+        // Button event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('pauseBtn').addEventListener('click', pauseGame);
+        document.getElementById('resetBtn').addEventListener('click', resetLevel);
+        document.getElementById('backToMapBtn').addEventListener('click', goToMapSelection);
+        
+        // Pause menu buttons
+        document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+        document.getElementById('restartPauseBtn').addEventListener('click', resetLevel);
+        document.getElementById('mainMenuBtn').addEventListener('click', goToMainMenu);
+        document.getElementById('mapSelectionBtn').addEventListener('click', goToMapSelection);
+        
+        // Game over buttons
+        document.getElementById('restartBtn').addEventListener('click', restartGame);
+        document.getElementById('backToMapBtn2').addEventListener('click', goToMapSelection);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+          if (event.key === 'Escape') {
+            if (document.getElementById('pauseMenu').classList.contains('hidden')) {
+              pauseGame();
+            } else {
+              resumeGame();
+            }
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

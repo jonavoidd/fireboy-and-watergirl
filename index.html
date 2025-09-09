@@ -142,6 +142,7 @@
       .title-main {
         font-size: 4em;
         background: linear-gradient(45deg, #ff6b35, #4a90e2);
+        background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-shadow: 0 0 30px rgba(255, 107, 53, 0.5), 0 0 60px rgba(74, 144, 226, 0.5);
@@ -302,6 +303,102 @@
           opacity: 0;
         }
       }
+
+      /* Pause Menu Styles */
+      #pauseMenu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        font-family: 'MedievalSharp', cursive;
+      }
+
+      #pauseContent {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 3px solid #d4af37;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 
+          inset 0 0 30px rgba(0,0,0,0.5),
+          0 10px 30px rgba(0,0,0,0.8);
+        animation: pauseSlideIn 0.3s ease-out;
+      }
+
+      @keyframes pauseSlideIn {
+        from {
+          opacity: 0;
+          transform: scale(0.8) translateY(-50px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      #pauseContent h2 {
+        color: #d4af37;
+        font-size: 2.5em;
+        margin-bottom: 30px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        letter-spacing: 2px;
+      }
+
+      .pause-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 250px;
+      }
+
+      .pause-btn {
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        padding: 12px 25px;
+        font-size: 1.1em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .pause-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+        transition: left 0.5s ease;
+      }
+
+      .pause-btn:hover::before {
+        left: 100%;
+      }
+
+      .pause-btn:hover {
+        background: linear-gradient(135deg, #2a1810, #3a2420);
+        transform: translateY(-2px);
+        box-shadow: 
+          inset 0 0 20px rgba(212, 175, 55, 0.1),
+          0 5px 15px rgba(0,0,0,0.6);
+        text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+      }
+
+      .pause-btn:active {
+        transform: translateY(0);
+      }
     </style>
   </head>
   <body>
@@ -396,6 +493,19 @@
           <button id="restartBtn">Play Again</button>
         </div>
       </div>
+
+      <!-- Pause Menu -->
+      <div id="pauseMenu" class="hidden">
+        <div id="pauseContent">
+          <h2>Game Paused</h2>
+          <div class="pause-buttons">
+            <button id="resumeBtn" class="pause-btn">Resume Game</button>
+            <button id="restartPauseBtn" class="pause-btn">Restart Level</button>
+            <button id="mainMenuBtn" class="pause-btn">Main Menu</button>
+            <button id="settingsPauseBtn" class="pause-btn">Settings</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="pointSystem.js"></script>
@@ -439,12 +549,8 @@
       }
       
       function selectMap() {
-        // Check if map-selection.html exists, otherwise show alert
-        if (document.querySelector('a[href="map-selection.html"]')) {
-          window.location.href = 'map-selection.html';
-        } else {
-          alert('Map selection coming soon! For now, use "Start Adventure" to begin the game.');
-        }
+        // Go to map selection
+        window.location.href = 'map-selection.html';
       }
       
       function showInstructions() {
@@ -474,11 +580,65 @@
         alert('FIREBOY VS WATERGIRL\nDungeon Battles\n\nA competitive twist on the classic game!\n\nCreated with:\n• HTML5 Canvas\n• CSS3 Animations\n• Vanilla JavaScript\n• Enhanced Combat System\n• Door & Defense Mechanics\n• Defense Barriers\n\nThank you for playing!');
       }
       
+      // Pause Menu Functions
+      function showPauseMenu() {
+        document.getElementById('pauseMenu').classList.remove('hidden');
+        if (window.game) {
+          window.game.gameState = "paused";
+        }
+      }
+
+      function hidePauseMenu() {
+        document.getElementById('pauseMenu').classList.add('hidden');
+        if (window.game) {
+          window.game.gameState = "playing";
+        }
+      }
+
+      function resumeGame() {
+        hidePauseMenu();
+      }
+
+      function restartFromPause() {
+        hidePauseMenu();
+        if (window.game) {
+          window.game.resetLevel();
+        }
+      }
+
+      function goToMainMenuFromPause() {
+        hidePauseMenu();
+        document.getElementById('gameContainer').classList.add('hidden');
+        document.getElementById('mainMenu').classList.remove('hidden');
+      }
+
+      function showSettingsFromPause() {
+        showSettings();
+      }
+
       // Initialize main menu on page load
       document.addEventListener('DOMContentLoaded', function() {
         // Show main menu by default
         document.getElementById('mainMenu').classList.remove('hidden');
         document.getElementById('gameContainer').classList.add('hidden');
+        
+        // Add pause menu event listeners
+        document.getElementById('pauseBtn').addEventListener('click', showPauseMenu);
+        document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+        document.getElementById('restartPauseBtn').addEventListener('click', restartFromPause);
+        document.getElementById('mainMenuBtn').addEventListener('click', goToMainMenuFromPause);
+        document.getElementById('settingsPauseBtn').addEventListener('click', showSettingsFromPause);
+        
+        // Add keyboard shortcut for pause (Escape key)
+        document.addEventListener('keydown', function(event) {
+          if (event.key === 'Escape' && !document.getElementById('mainMenu').classList.contains('hidden') === false) {
+            if (document.getElementById('pauseMenu').classList.contains('hidden')) {
+              showPauseMenu();
+            } else {
+              hidePauseMenu();
+            }
+          }
+        });
       });
     </script>
   </body>
