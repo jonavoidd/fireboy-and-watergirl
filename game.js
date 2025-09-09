@@ -20,20 +20,19 @@ class Game {
     this.enemies = [];
     this.defenseWalls = []; // Active defense barriers
     this.effects = []; // Visual effects array
-    
+
     // Active defense system
     this.activeDefense = {
-      
       fireboy: false,
-      watergirl: false
+      watergirl: false,
     };
     this.defenseCooldown = {
       fireboy: 0,
-      watergirl: 0
+      watergirl: 0,
     };
     this.defenseStartTime = {
       fireboy: 0,
-      watergirl: 0
+      watergirl: 0,
     };
     this.defenseDuration = 5000; // 5 seconds
     this.defenseCooldownTime = 10000; // 10 seconds cooldown
@@ -44,6 +43,8 @@ class Game {
     this.keys = {};
     this.lastTime = 0;
     this.gameSpeed = 1;
+    this.isTabVisible = true;
+    this.maxDeltaTime = 1 / 30; // Cap delta time to 30 FPS minimum
 
     // Door system
     this.door = null;
@@ -192,7 +193,7 @@ class Game {
         // Barrier in front when facing left
         barrierX = this.fireboy.x - 100;
       }
-      
+
       const barrier = new DefenseBarrier(
         barrierX,
         this.fireboy.y + this.fireboy.height / 2 - 2,
@@ -208,7 +209,7 @@ class Game {
         // Barrier in front when facing left
         barrierX = this.watergirl.x - 100;
       }
-      
+
       const barrier = new DefenseBarrier(
         barrierX,
         this.watergirl.y + this.watergirl.height / 2 - 2,
@@ -246,6 +247,15 @@ class Game {
     document
       .getElementById("restartBtn")
       .addEventListener("click", () => this.restartGame());
+
+    // Handle tab visibility changes
+    document.addEventListener("visibilitychange", () => {
+      this.isTabVisible = !document.hidden;
+      if (!this.isTabVisible) {
+        // Reset lastTime when tab becomes hidden to prevent large delta time
+        this.lastTime = 0;
+      }
+    });
   }
 
   createLevel(level) {
@@ -255,19 +265,19 @@ class Game {
     this.goals = [];
     this.enemies = [];
     this.defenseWalls = [];
-    
+
     // Reset defense system
     this.activeDefense = {
       fireboy: false,
-      watergirl: false
+      watergirl: false,
     };
     this.defenseCooldown = {
       fireboy: 0,
-      watergirl: 0
+      watergirl: 0,
     };
     this.defenseStartTime = {
       fireboy: 0,
-      watergirl: 0
+      watergirl: 0,
     };
 
     // Reset door system
@@ -461,12 +471,15 @@ class Game {
   update(deltaTime) {
     if (this.gameState !== "playing") return;
 
+    // Don't update physics when tab is not visible to prevent glitches
+    if (!this.isTabVisible) return;
+
     // Update door system
     this.updateDoorSystem(deltaTime);
 
     // Update ultimate skill cooldowns
     this.updateUltimateCooldowns(deltaTime);
-    
+
     // Update defense system
     this.updateDefenseSystem(deltaTime);
 
@@ -654,7 +667,11 @@ class Game {
     this.defenseWalls = [];
 
     // Handle active defense for Fireboy
-    if (this.keys["KeyQ"] && this.defenseCooldown.fireboy <= 0 && this.fireboy) {
+    if (
+      this.keys["KeyQ"] &&
+      this.defenseCooldown.fireboy <= 0 &&
+      this.fireboy
+    ) {
       if (!this.activeDefense.fireboy) {
         this.activeDefense.fireboy = true;
         this.defenseStartTime.fireboy = Date.now();
@@ -666,7 +683,11 @@ class Game {
     }
 
     // Handle active defense for Watergirl
-    if (this.keys["KeyP"] && this.defenseCooldown.watergirl <= 0 && this.watergirl) {
+    if (
+      this.keys["KeyP"] &&
+      this.defenseCooldown.watergirl <= 0 &&
+      this.watergirl
+    ) {
       if (!this.activeDefense.watergirl) {
         this.activeDefense.watergirl = true;
         this.defenseStartTime.watergirl = Date.now();
@@ -678,11 +699,17 @@ class Game {
     }
 
     // Check if defense duration has expired
-    if (this.activeDefense.fireboy && Date.now() - this.defenseStartTime.fireboy >= this.defenseDuration) {
+    if (
+      this.activeDefense.fireboy &&
+      Date.now() - this.defenseStartTime.fireboy >= this.defenseDuration
+    ) {
       this.activeDefense.fireboy = false;
       this.defenseCooldown.fireboy = this.defenseCooldownTime;
     }
-    if (this.activeDefense.watergirl && Date.now() - this.defenseStartTime.watergirl >= this.defenseDuration) {
+    if (
+      this.activeDefense.watergirl &&
+      Date.now() - this.defenseStartTime.watergirl >= this.defenseDuration
+    ) {
       this.activeDefense.watergirl = false;
       this.defenseCooldown.watergirl = this.defenseCooldownTime;
     }
@@ -692,13 +719,13 @@ class Game {
     // Check for projectile vs projectile collisions
     // Use a different approach to avoid array modification issues
     const projectilesToRemove = new Set();
-    
+
     for (let i = 0; i < this.projectiles.length; i++) {
       if (projectilesToRemove.has(i)) continue; // Skip already marked projectiles
-      
+
       for (let j = i + 1; j < this.projectiles.length; j++) {
         if (projectilesToRemove.has(j)) continue; // Skip already marked projectiles
-        
+
         const proj1 = this.projectiles[i];
         const proj2 = this.projectiles[j];
 
@@ -751,13 +778,13 @@ class Game {
           // Mark both projectiles for removal
           projectilesToRemove.add(i);
           projectilesToRemove.add(j);
-          
+
           // Break out of inner loop since we found a collision
           break;
         }
       }
     }
-    
+
     // Remove marked projectiles in reverse order to maintain correct indices
     const sortedIndices = Array.from(projectilesToRemove).sort((a, b) => b - a);
     for (const index of sortedIndices) {
@@ -862,15 +889,15 @@ class Game {
             "#ffff00"
           );
           this.playSound(300, 0.3, "square");
-          
+
           // Award defense points only for successful blocks with active defense
           if (window.pointSystem) {
             window.pointSystem.addPoints(barrier.defender, 1, "defense");
           }
-          
+
           // Track defense count for ultimate
           this.defenseCount[barrier.defender]++;
-          
+
           // Remove the projectile
           this.projectiles.splice(projIndex, 1);
         }
@@ -1200,10 +1227,14 @@ class Game {
     if (this.fireboy) {
       const fireboyX = 20;
       const fireboyY = 140;
-      
+
       // Defense status
       if (this.activeDefense.fireboy) {
-        const timeLeft = Math.ceil((this.defenseDuration - (Date.now() - this.defenseStartTime.fireboy)) / 1000);
+        const timeLeft = Math.ceil(
+          (this.defenseDuration -
+            (Date.now() - this.defenseStartTime.fireboy)) /
+            1000
+        );
         this.ctx.fillStyle = "#ff6b35";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "left";
@@ -1213,7 +1244,11 @@ class Game {
         this.ctx.fillStyle = "#666";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "left";
-        this.ctx.fillText(`DEFENSE COOLDOWN: ${cooldownLeft}s`, fireboyX, fireboyY);
+        this.ctx.fillText(
+          `DEFENSE COOLDOWN: ${cooldownLeft}s`,
+          fireboyX,
+          fireboyY
+        );
       } else {
         this.ctx.fillStyle = "#ffff00";
         this.ctx.font = "bold 14px Arial";
@@ -1226,10 +1261,14 @@ class Game {
     if (this.watergirl) {
       const watergirlX = this.width - 200;
       const watergirlY = 140;
-      
+
       // Defense status
       if (this.activeDefense.watergirl) {
-        const timeLeft = Math.ceil((this.defenseDuration - (Date.now() - this.defenseStartTime.watergirl)) / 1000);
+        const timeLeft = Math.ceil(
+          (this.defenseDuration -
+            (Date.now() - this.defenseStartTime.watergirl)) /
+            1000
+        );
         this.ctx.fillStyle = "#4a90e2";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "right";
@@ -1239,7 +1278,11 @@ class Game {
         this.ctx.fillStyle = "#666";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "right";
-        this.ctx.fillText(`DEFENSE COOLDOWN: ${cooldownLeft}s`, watergirlX, watergirlY);
+        this.ctx.fillText(
+          `DEFENSE COOLDOWN: ${cooldownLeft}s`,
+          watergirlX,
+          watergirlY
+        );
       } else {
         this.ctx.fillStyle = "#ffff00";
         this.ctx.font = "bold 14px Arial";
@@ -1253,12 +1296,12 @@ class Game {
     // Draw ultimate attack buttons on screen
     const buttonSize = 60;
     const buttonSpacing = 80;
-    
+
     // Fireboy ultimate button
     if (this.fireboy) {
       const fireboyButtonX = 20;
       const fireboyButtonY = this.height - 100;
-      
+
       // Button background
       if (this.ultimateReady.fireboy) {
         // Ready state - glowing effect
@@ -1270,34 +1313,47 @@ class Game {
         this.ctx.shadowBlur = 0;
         this.ctx.fillStyle = "#666";
       }
-      
+
       this.ctx.fillRect(fireboyButtonX, fireboyButtonY, buttonSize, buttonSize);
-      
+
       // Button border
       this.ctx.strokeStyle = this.ultimateReady.fireboy ? "#ff4500" : "#444";
       this.ctx.lineWidth = 3;
-      this.ctx.strokeRect(fireboyButtonX, fireboyButtonY, buttonSize, buttonSize);
-      
+      this.ctx.strokeRect(
+        fireboyButtonX,
+        fireboyButtonY,
+        buttonSize,
+        buttonSize
+      );
+
       // Button text
       this.ctx.fillStyle = "#fff";
       this.ctx.font = "bold 20px Arial";
       this.ctx.textAlign = "center";
-      this.ctx.fillText("E", fireboyButtonX + buttonSize/2, fireboyButtonY + buttonSize/2 + 7);
-      
+      this.ctx.fillText(
+        "E",
+        fireboyButtonX + buttonSize / 2,
+        fireboyButtonY + buttonSize / 2 + 7
+      );
+
       // Ultimate label
       this.ctx.fillStyle = this.ultimateReady.fireboy ? "#ff6b35" : "#666";
       this.ctx.font = "bold 12px Arial";
-      this.ctx.fillText("ULTIMATE", fireboyButtonX + buttonSize/2, fireboyButtonY - 5);
-      
+      this.ctx.fillText(
+        "ULTIMATE",
+        fireboyButtonX + buttonSize / 2,
+        fireboyButtonY - 5
+      );
+
       // Reset shadow
       this.ctx.shadowBlur = 0;
     }
-    
+
     // Watergirl ultimate button
     if (this.watergirl) {
       const watergirlButtonX = this.width - 80;
       const watergirlButtonY = this.height - 100;
-      
+
       // Button background
       if (this.ultimateReady.watergirl) {
         // Ready state - glowing effect
@@ -1309,29 +1365,47 @@ class Game {
         this.ctx.shadowBlur = 0;
         this.ctx.fillStyle = "#666";
       }
-      
-      this.ctx.fillRect(watergirlButtonX, watergirlButtonY, buttonSize, buttonSize);
-      
+
+      this.ctx.fillRect(
+        watergirlButtonX,
+        watergirlButtonY,
+        buttonSize,
+        buttonSize
+      );
+
       // Button border
       this.ctx.strokeStyle = this.ultimateReady.watergirl ? "#2c5aa0" : "#444";
       this.ctx.lineWidth = 3;
-      this.ctx.strokeRect(watergirlButtonX, watergirlButtonY, buttonSize, buttonSize);
-      
+      this.ctx.strokeRect(
+        watergirlButtonX,
+        watergirlButtonY,
+        buttonSize,
+        buttonSize
+      );
+
       // Button text
       this.ctx.fillStyle = "#fff";
       this.ctx.font = "bold 20px Arial";
       this.ctx.textAlign = "center";
-      this.ctx.fillText("O", watergirlButtonX + buttonSize/2, watergirlButtonY + buttonSize/2 + 7);
-      
+      this.ctx.fillText(
+        "O",
+        watergirlButtonX + buttonSize / 2,
+        watergirlButtonY + buttonSize / 2 + 7
+      );
+
       // Ultimate label
       this.ctx.fillStyle = this.ultimateReady.watergirl ? "#4a90e2" : "#666";
       this.ctx.font = "bold 12px Arial";
-      this.ctx.fillText("ULTIMATE", watergirlButtonX + buttonSize/2, watergirlButtonY - 5);
-      
+      this.ctx.fillText(
+        "ULTIMATE",
+        watergirlButtonX + buttonSize / 2,
+        watergirlButtonY - 5
+      );
+
       // Reset shadow
       this.ctx.shadowBlur = 0;
     }
-    
+
     // Reset text alignment
     this.ctx.textAlign = "left";
   }
@@ -1419,10 +1493,18 @@ class Game {
   }
 
   gameLoop(currentTime = 0) {
+    // Handle first frame
+    if (this.lastTime === 0) {
+      this.lastTime = currentTime;
+    }
+
     const deltaTime = (currentTime - this.lastTime) / 1000;
     this.lastTime = currentTime;
 
-    this.update(deltaTime);
+    // Cap delta time to prevent physics glitches
+    const cappedDeltaTime = Math.min(deltaTime, this.maxDeltaTime);
+
+    this.update(cappedDeltaTime);
     this.render();
 
     requestAnimationFrame((time) => this.gameLoop(time));
@@ -1821,7 +1903,11 @@ class Platform {
 
   render(ctx) {
     // Use platform asset if available, otherwise fallback to gradient
-    if (window.game && window.game.assets && window.game.assets.platformSprite) {
+    if (
+      window.game &&
+      window.game.assets &&
+      window.game.assets.platformSprite
+    ) {
       // Draw platform using the asset image
       ctx.drawImage(
         window.game.assets.platformSprite,
@@ -2124,8 +2210,10 @@ class DefenseBarrier {
 
     // Create thin barrier with character's element
     const gradient = ctx.createLinearGradient(
-      this.x, this.y,
-      this.x + this.width, this.y + this.height
+      this.x,
+      this.y,
+      this.x + this.width,
+      this.y + this.height
     );
 
     if (this.defender === "fireboy") {
