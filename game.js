@@ -34,8 +34,8 @@ class Game {
       fireboy: 0,
       watergirl: 0,
     };
-    this.defenseDuration = 3000; // 5 seconds
-    this.defenseCooldownTime = 10000; // 10 seconds cooldown
+    this.defenseDuration = 3000; // 3 seconds (in milliseconds for Date.now() comparison)
+    this.defenseCooldownTime = 7; // 7 seconds cooldown (in seconds for deltaTime)
 
     this.fireboyScore = 0;
     this.watergirlScore = 0;
@@ -666,39 +666,7 @@ class Game {
     // Clear existing barriers
     this.defenseWalls = [];
 
-    // Handle active defense for Fireboy
-    if (
-      this.keys["KeyQ"] &&
-      this.defenseCooldown.fireboy <= 0 &&
-      this.fireboy
-    ) {
-      if (!this.activeDefense.fireboy) {
-        this.activeDefense.fireboy = true;
-        this.defenseStartTime.fireboy = Date.now();
-      }
-      // Update barrier position
-      this.createDefenseBarrier("fireboy");
-    } else {
-      this.activeDefense.fireboy = false;
-    }
-
-    // Handle active defense for Watergirl
-    if (
-      this.keys["KeyP"] &&
-      this.defenseCooldown.watergirl <= 0 &&
-      this.watergirl
-    ) {
-      if (!this.activeDefense.watergirl) {
-        this.activeDefense.watergirl = true;
-        this.defenseStartTime.watergirl = Date.now();
-      }
-      // Update barrier position
-      this.createDefenseBarrier("watergirl");
-    } else {
-      this.activeDefense.watergirl = false;
-    }
-
-    // Check if defense duration has expired
+    // Check if defense duration has expired first
     if (
       this.activeDefense.fireboy &&
       Date.now() - this.defenseStartTime.fireboy >= this.defenseDuration
@@ -712,6 +680,38 @@ class Game {
     ) {
       this.activeDefense.watergirl = false;
       this.defenseCooldown.watergirl = this.defenseCooldownTime;
+    }
+
+    // Handle active defense for Fireboy
+    if (
+      this.keys["KeyQ"] &&
+      this.defenseCooldown.fireboy <= 0 &&
+      this.fireboy &&
+      !this.activeDefense.fireboy
+    ) {
+      // Start new defense
+      this.activeDefense.fireboy = true;
+      this.defenseStartTime.fireboy = Date.now();
+    }
+
+    // Handle active defense for Watergirl
+    if (
+      this.keys["KeyP"] &&
+      this.defenseCooldown.watergirl <= 0 &&
+      this.watergirl &&
+      !this.activeDefense.watergirl
+    ) {
+      // Start new defense
+      this.activeDefense.watergirl = true;
+      this.defenseStartTime.watergirl = Date.now();
+    }
+
+    // Create barriers for active defenses
+    if (this.activeDefense.fireboy) {
+      this.createDefenseBarrier("fireboy");
+    }
+    if (this.activeDefense.watergirl) {
+      this.createDefenseBarrier("watergirl");
     }
   }
 
@@ -1226,7 +1226,7 @@ class Game {
     // Draw defense status for Fireboy
     if (this.fireboy) {
       const fireboyX = 20;
-      const fireboyY = 140;
+      const fireboyY = 95;
 
       // Defense status
       if (this.activeDefense.fireboy) {
@@ -1240,7 +1240,7 @@ class Game {
         this.ctx.textAlign = "left";
         this.ctx.fillText(`DEFENSE: ${timeLeft}s`, fireboyX, fireboyY);
       } else if (this.defenseCooldown.fireboy > 0) {
-        const cooldownLeft = Math.ceil(this.defenseCooldown.fireboy / 1000);
+        const cooldownLeft = Math.ceil(this.defenseCooldown.fireboy);
         this.ctx.fillStyle = "#666";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "left";
@@ -1260,7 +1260,7 @@ class Game {
     // Draw defense status for Watergirl
     if (this.watergirl) {
       const watergirlX = this.width - 200;
-      const watergirlY = 140;
+      const watergirlY = 95;
 
       // Defense status
       if (this.activeDefense.watergirl) {
@@ -1272,22 +1272,22 @@ class Game {
         this.ctx.fillStyle = "#4a90e2";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "right";
-        this.ctx.fillText(`DEFENSE: ${timeLeft}s`, watergirlX, watergirlY);
+        this.ctx.fillText(`DEFENSE: ${timeLeft}s`, this.width - 20, watergirlY);
       } else if (this.defenseCooldown.watergirl > 0) {
-        const cooldownLeft = Math.ceil(this.defenseCooldown.watergirl / 1000);
+        const cooldownLeft = Math.ceil(this.defenseCooldown.watergirl);
         this.ctx.fillStyle = "#666";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "right";
         this.ctx.fillText(
           `DEFENSE COOLDOWN: ${cooldownLeft}s`,
-          watergirlX,
+          this.width - 20,
           watergirlY
         );
       } else {
         this.ctx.fillStyle = "#ffff00";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "right";
-        this.ctx.fillText("DEFENSE READY (P)", watergirlX, watergirlY);
+        this.ctx.fillText("DEFENSE READY (P)", this.width - 20, watergirlY);
       }
     }
   }
@@ -1413,7 +1413,7 @@ class Game {
   drawUltimateIndicators() {
     // Fireboy ultimate indicator
     const fireboyX = 20;
-    const fireboyY = 100;
+    const fireboyY = 55;
     const fireboyProgress = Math.min(this.defenseCount.fireboy / 5, 1);
 
     // Background
@@ -1448,7 +1448,7 @@ class Game {
 
     // Watergirl ultimate indicator
     const watergirlX = this.width - 220;
-    const watergirlY = 100;
+    const watergirlY = 55;
     const watergirlProgress = Math.min(this.defenseCount.watergirl / 5, 1);
 
     // Background
