@@ -621,6 +621,21 @@
           </div>
         </div>
       </div>
+
+      <!-- Victory Overlay -->
+      <div id="victoryOverlay" class="victory-overlay hidden">
+        <div class="victory-content">
+          <h2 id="victoryWinner">FIREBOY WINS!</h2>
+          <div class="victory-buttons">
+            <button id="proceedToLevel2Btn" class="menu-btn">
+              Proceed to Level 2
+            </button>
+            <button id="returnToMainMenuFromVictoryBtn" class="menu-btn">
+              Main Menu
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="settings.js"></script>
@@ -770,6 +785,22 @@
         document
           .getElementById("settingsPauseBtn")
           .addEventListener("click", showSettingsFromPause);
+
+        // Victory overlay buttons
+        document
+          .getElementById("proceedToLevel2Btn")
+          .addEventListener("click", () => {
+            if (window.game) {
+              window.game.proceedToLevel2();
+            }
+          });
+        document
+          .getElementById("returnToMainMenuFromVictoryBtn")
+          .addEventListener("click", () => {
+            if (window.game) {
+              window.game.returnToMainMenuFromVictory();
+            }
+          });
 
         // Add keyboard shortcut for pause (Escape key)
         document.addEventListener("keydown", function (event) {

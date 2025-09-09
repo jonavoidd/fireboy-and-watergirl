@@ -59,6 +59,10 @@ class Game {
       watergirl: 0,
     };
 
+    // Victory system
+    this.victoryDeclared = false;
+    this.victoryWinner = null;
+
     // Power-up spawning system
     this.lastPowerUpSpawn = 0;
     this.powerUpSpawnDelay = 8000; // 8 seconds between power-ups
@@ -311,6 +315,10 @@ class Game {
       fireboy: 0,
       watergirl: 0,
     };
+
+    // Reset victory system
+    this.victoryDeclared = false;
+    this.victoryWinner = null;
     // Reset ultimate skills
     this.ultimateReady = {
       fireboy: false,
@@ -599,11 +607,19 @@ class Game {
     if (!this.door) return;
 
     // Check if Fireboy reaches the door (only if alive)
-    if (this.fireboy && this.fireboy.health > 0 && this.door.checkCollision(this.fireboy)) {
+    if (
+      this.fireboy &&
+      this.fireboy.health > 0 &&
+      this.door.checkCollision(this.fireboy)
+    ) {
       this.handleDoorWin("fireboy");
     }
     // Check if Watergirl reaches the door (only if alive)
-    else if (this.watergirl && this.watergirl.health > 0 && this.door.checkCollision(this.watergirl)) {
+    else if (
+      this.watergirl &&
+      this.watergirl.health > 0 &&
+      this.door.checkCollision(this.watergirl)
+    ) {
       this.handleDoorWin("watergirl");
     }
   }
@@ -644,7 +660,7 @@ class Game {
 
     // Automatically transition to level 2 after a short delay
     setTimeout(() => {
-      window.location.href = 'level2.html';
+      window.location.href = "level2.html";
     }, 2000); // 2 second delay to show the win effect
   }
 
@@ -1043,10 +1059,51 @@ class Game {
 
     if (this.gameMode === "competitive") {
       // Check if a character has died and spawn door immediately
-      if (this.fireboy.health <= 0 || this.watergirl.health <= 0) {
+      if (
+        (this.fireboy.health <= 0 || this.watergirl.health <= 0) &&
+        !this.victoryDeclared
+      ) {
         // If door hasn't spawned yet, spawn it immediately
         if (!this.door && !this.doorActive) {
           this.spawnDoor();
+        }
+
+        // Determine winner and show immediate victory
+        let winner = null;
+        if (this.fireboy.health <= 0 && this.watergirl.health > 0) {
+          winner = "watergirl";
+        } else if (this.watergirl.health <= 0 && this.fireboy.health > 0) {
+          winner = "fireboy";
+        }
+
+        if (winner) {
+          // Mark victory as declared to prevent looping
+          this.victoryDeclared = true;
+          this.victoryWinner = winner;
+
+          // Show victory overlay
+          this.showVictoryOverlay(winner);
+
+          // Add points using global point system
+          if (window.pointSystem) {
+            window.pointSystem.addPoints(winner, 1, "victory");
+          }
+
+          // Update local scores
+          if (winner === "fireboy") {
+            this.fireboyScore++;
+          } else {
+            this.watergirlScore++;
+          }
+
+          // Play victory sound
+          this.playSound(800, 1.0, "sine");
+
+          // Add visual effects
+          this.addEffect(this.width / 2, this.height / 2, "goal");
+
+          // Update UI
+          this.updateUI();
         }
       }
     } else if (this.gameMode === "cooperative") {
@@ -1057,7 +1114,7 @@ class Game {
           this.spawnDoor();
         }
       }
-      
+
       // Check if all goals are activated (only if there are goals)
       if (this.goals.length > 0) {
         const allGoalsActivated = this.goals.every((goal) => goal.activated);
@@ -1190,7 +1247,13 @@ class Game {
   drawBackground() {
     if (this.currentLevel === 2 && this.assets.level2Background) {
       // Use level 2 background
-      this.ctx.drawImage(this.assets.level2Background, 0, 0, this.width, this.height);
+      this.ctx.drawImage(
+        this.assets.level2Background,
+        0,
+        0,
+        this.width,
+        this.height
+      );
     } else if (this.assets.background) {
       // Draw background image scaled to fit canvas
       this.ctx.drawImage(this.assets.background, 0, 0, this.width, this.height);
@@ -1270,9 +1333,36 @@ class Game {
     this.ctx.textAlign = "left";
   }
 
+  showVictoryOverlay(winner) {
+    // Show victory overlay
+    document.getElementById("victoryOverlay").classList.remove("hidden");
+    document.getElementById(
+      "victoryWinner"
+    ).textContent = `${winner.toUpperCase()} WINS!`;
+    document.getElementById("victoryWinner").style.color =
+      winner === "fireboy" ? "#ff6b35" : "#4a90e2";
+  }
+
+  hideVictoryOverlay() {
+    document.getElementById("victoryOverlay").classList.add("hidden");
+  }
+
+  proceedToLevel2() {
+    this.hideVictoryOverlay();
+    window.location.href = "level2.html";
+  }
+
+  returnToMainMenuFromVictory() {
+    this.hideVictoryOverlay();
+    document.getElementById("gameContainer").classList.add("hidden");
+    document.getElementById("mainMenu").classList.remove("hidden");
+  }
+
   drawDoorUI() {
-    // Draw door countdown
-    if (this.doorActive) {
+    // Draw door countdown only if no one has won yet
+    const hasWinner = this.victoryDeclared;
+
+    if (this.doorActive && !hasWinner) {
       const timeLeft = Math.ceil(this.doorCountdown / 1000);
       this.ctx.fillStyle = "#ffff00";
       this.ctx.font = "bold 24px Arial";
@@ -1287,7 +1377,7 @@ class Game {
         this.ctx.strokeText(`DOOR: ${timeLeft}s`, this.width / 2, 60);
         this.ctx.fillText(`DOOR: ${timeLeft}s`, this.width / 2, 60);
       }
-    } else if (!this.door) {
+    } else if (!this.door && !hasWinner) {
       const timeUntilDoor = Math.ceil(
         (this.doorSpawnDelay - (Date.now() - this.gameStartTime)) / 1000
       );
@@ -1612,7 +1702,7 @@ class Game {
     // Update existing acid drops
     this.acidRain.forEach((drop, index) => {
       drop.update(deltaTime);
-      
+
       // Check platform collisions
       this.platforms.forEach((platform) => {
         if (
@@ -1624,7 +1714,7 @@ class Game {
           drop.hitGround = true;
         }
       });
-      
+
       // Remove drops that hit the ground or go off screen
       if (drop.y > this.height || drop.hitGround) {
         this.acidRain.splice(index, 1);
@@ -1642,11 +1732,11 @@ class Game {
   spawnAcidDrop() {
     // Spawn 2-4 acid drops at once for more intense rain
     const dropCount = Math.floor(Math.random() * 3) + 2; // 2-4 drops
-    
+
     for (let i = 0; i < dropCount; i++) {
       const drop = new AcidDrop(
         Math.random() * this.width, // Random x position
-        -10 - (i * 20), // Stagger drops vertically
+        -10 - i * 20, // Stagger drops vertically
         Math.random() * 100 + 150 // Random fall speed
       );
       this.acidRain.push(drop);
@@ -1809,7 +1899,7 @@ class Character {
 
   render(ctx) {
     ctx.save();
-    
+
     // If character is dead, make them grayed out
     if (this.health <= 0) {
       ctx.globalAlpha = 0.5; // Make semi-transparent
@@ -1851,7 +1941,7 @@ class Character {
       ctx.fillRect(this.x + 15, this.y + 15, 5, 5);
       ctx.fillRect(this.x + 25, this.y + 15, 5, 5);
     }
-    
+
     ctx.restore();
   }
 }
@@ -2971,7 +3061,7 @@ class AcidDrop {
 
   render(ctx) {
     ctx.save();
-    
+
     // Create acid drop with green gradient and glow
     const gradient = ctx.createRadialGradient(
       this.x + this.width / 2,
