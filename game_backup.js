@@ -34,11 +34,12 @@ class Game {
       fireboy: 0,
       watergirl: 0,
     };
-    this.defenseDuration = 3000; // 3 seconds (in milliseconds for Date.now() comparison)
-    this.defenseCooldownTime = 7; // 7 seconds cooldown (in seconds for deltaTime)
+    this.defenseDuration = 3; // 3 seconds
+    this.defenseCooldownTime = 10; // 10 seconds cooldown (in seconds)
 
     this.fireboyScore = 0;
     this.watergirlScore = 0;
+    this.doorWinner = null; // Track who won the door in level 1
 
     this.keys = {};
     this.lastTime = 0;
@@ -73,14 +74,13 @@ class Game {
     // Game assets
     this.assets = {
       background: null,
-      level2Background: null,
       fireboySprite: null,
       watergirlSprite: null,
       doorSprite: null,
       platformSprite: null,
     };
     this.assetsLoaded = 0;
-    this.totalAssets = 6;
+    this.totalAssets = 5;
 
     this.init();
   }
@@ -101,14 +101,6 @@ class Game {
       this.checkAssetsLoaded();
     };
     this.assets.background.src = "assets/main-bg.png";
-
-    // Load level 2 background image
-    this.assets.level2Background = new Image();
-    this.assets.level2Background.onload = () => {
-      this.assetsLoaded++;
-      this.checkAssetsLoaded();
-    };
-    this.assets.level2Background.src = "assets/lvl2bg.png";
 
     // Load Fireboy sprite
     this.assets.fireboySprite = new Image();
@@ -221,7 +213,7 @@ class Game {
 
       const barrier = new DefenseBarrier(
         barrierX,
-        this.watergirl.y + this.watergirl.height / 2 - 25, // Center vertically
+        this.watergirl.y + this.watergirl.height / 2 -25, // Center vertically
         defender
       );
       this.defenseWalls.push(barrier);
@@ -362,6 +354,16 @@ class Game {
     document.getElementById("objectiveText").textContent =
       "Work together to reach the goal!";
 
+    // Show door winner information
+    if (this.doorWinner) {
+      this.addTextEffect(
+        this.width / 2,
+        100,
+        `${this.doorWinner.toUpperCase()} GOT THE POINT FROM LEVEL 1!`,
+        this.doorWinner === "fireboy" ? "#ff6b35" : "#4a90e2"
+      );
+    }
+
     // Create platforms
     this.platforms = [
       new Platform(0, this.height - 50, this.width, 50, "#8B4513"),
@@ -372,8 +374,8 @@ class Game {
       new Platform(750, this.height - 200, 150, 20, "#8B4513"),
     ];
 
-    // Create goal - REMOVED to prevent game freeze
-    // this.goals.push(new Goal(850, this.height - 250, "both"));
+    // Create goal
+    this.goals.push(new Goal(850, this.height - 250, "both"));
 
     // Add enemies that both players must defeat
     this.enemies.push(new Enemy(400, this.height - 400, "fire"));
@@ -629,19 +631,53 @@ class Game {
       winner === "fireboy" ? "#ff6b35" : "#4a90e2"
     );
 
-    // Reset door
-    this.door = null;
-    this.doorActive = false;
-    this.doorCountdown = 0;
-    this.doorSpawnDelay = 15000 + Math.random() * 15000; // Reset for next door
+    // Show level transition message
+    this.addTextEffect(
+      this.width / 2,
+      this.height / 2,
+      "TRANSITIONING TO LEVEL 2...",
+      "#ffff00"
+    );
+
+    // Transition to level 2 after a short delay
+    setTimeout(() => {
+      this.transitionToLevel2(winner);
+    }, 2000);
 
     // Update UI
     this.updateUI();
+  }
 
-    // Automatically transition to level 2 after a short delay
-    setTimeout(() => {
-      window.location.href = 'level2.html';
-    }, 2000); // 2 second delay to show the win effect
+  transitionToLevel2(winner) {
+    // Store the winner for level 2
+    this.doorWinner = winner;
+    
+    // Transition to level 2
+    this.currentLevel = 2;
+    this.createLevel(this.currentLevel);
+    
+    // Reset door system for level 2
+    this.door = null;
+    this.doorActive = false;
+    this.doorCountdown = 0;
+    this.doorSpawnDelay = 15000 + Math.random() * 15000;
+    
+    // Show level 2 message
+    this.addTextEffect(
+      this.width / 2,
+      this.height / 2 - 50,
+      "LEVEL 2: COOPERATIVE MODE",
+      "#ffff00"
+    );
+    this.addTextEffect(
+      this.width / 2,
+      this.height / 2 - 20,
+      `${winner.toUpperCase()} GOT THE POINT!`,
+      winner === "fireboy" ? "#ff6b35" : "#4a90e2"
+    );
+    
+    // Update UI
+    this.updateUI();
   }
 
   updateUltimateCooldowns(deltaTime) {
@@ -680,52 +716,52 @@ class Game {
     // Clear existing barriers
     this.defenseWalls = [];
 
-    // Check if defense duration has expired first
-    if (
-      this.activeDefense.fireboy &&
-      Date.now() - this.defenseStartTime.fireboy >= this.defenseDuration
-    ) {
-      this.activeDefense.fireboy = false;
-      this.defenseCooldown.fireboy = this.defenseCooldownTime;
-    }
-    if (
-      this.activeDefense.watergirl &&
-      Date.now() - this.defenseStartTime.watergirl >= this.defenseDuration
-    ) {
-      this.activeDefense.watergirl = false;
-      this.defenseCooldown.watergirl = this.defenseCooldownTime;
-    }
-
     // Handle active defense for Fireboy
     if (
       this.keys["KeyQ"] &&
       this.defenseCooldown.fireboy <= 0 &&
-      this.fireboy &&
-      !this.activeDefense.fireboy
+      this.fireboy
     ) {
-      // Start new defense
-      this.activeDefense.fireboy = true;
-      this.defenseStartTime.fireboy = Date.now();
+      if (!this.activeDefense.fireboy) {
+        this.activeDefense.fireboy = true;
+        this.defenseStartTime.fireboy = Date.now();
+      }
+      // Update barrier position
+      this.createDefenseBarrier("fireboy");
+    } else {
+      this.activeDefense.fireboy = false;
     }
 
     // Handle active defense for Watergirl
     if (
       this.keys["KeyP"] &&
       this.defenseCooldown.watergirl <= 0 &&
-      this.watergirl &&
-      !this.activeDefense.watergirl
+      this.watergirl
     ) {
-      // Start new defense
-      this.activeDefense.watergirl = true;
-      this.defenseStartTime.watergirl = Date.now();
+      if (!this.activeDefense.watergirl) {
+        this.activeDefense.watergirl = true;
+        this.defenseStartTime.watergirl = Date.now();
+      }
+      // Update barrier position
+      this.createDefenseBarrier("watergirl");
+    } else {
+      this.activeDefense.watergirl = false;
     }
 
-    // Create barriers for active defenses
-    if (this.activeDefense.fireboy) {
-      this.createDefenseBarrier("fireboy");
+    // Check if defense duration has expired
+    if (
+      this.activeDefense.fireboy &&
+      (Date.now() - this.defenseStartTime.fireboy) / 1000 >= this.defenseDuration
+    ) {
+      this.activeDefense.fireboy = false;
+      this.defenseCooldown.fireboy = this.defenseCooldownTime;
     }
-    if (this.activeDefense.watergirl) {
-      this.createDefenseBarrier("watergirl");
+    if (
+      this.activeDefense.watergirl &&
+      (Date.now() - this.defenseStartTime.watergirl) / 1000 >= this.defenseDuration
+    ) {
+      this.activeDefense.watergirl = false;
+      this.defenseCooldown.watergirl = this.defenseCooldownTime;
     }
   }
 
@@ -968,12 +1004,10 @@ class Game {
         this.showGameOver("Fireboy Wins!");
       }
     } else if (this.gameMode === "cooperative") {
-      // Check if all goals are activated (only if there are goals)
-      if (this.goals.length > 0) {
-        const allGoalsActivated = this.goals.every((goal) => goal.activated);
-        if (allGoalsActivated) {
-          this.showLevelComplete();
-        }
+      // Check if all goals are activated
+      const allGoalsActivated = this.goals.every((goal) => goal.activated);
+      if (allGoalsActivated) {
+        this.showLevelComplete();
       }
     }
   }
@@ -1096,10 +1130,7 @@ class Game {
   }
 
   drawBackground() {
-    if (this.currentLevel === 2 && this.assets.level2Background) {
-      // Use level 2 background
-      this.ctx.drawImage(this.assets.level2Background, 0, 0, this.width, this.height);
-    } else if (this.assets.background) {
+    if (this.assets.background) {
       // Draw background image scaled to fit canvas
       this.ctx.drawImage(this.assets.background, 0, 0, this.width, this.height);
     } else {
@@ -1245,21 +1276,20 @@ class Game {
     // Draw defense status for Fireboy
     if (this.fireboy) {
       const fireboyX = 20;
-      const fireboyY = 95;
+      const fireboyY = 140;
 
       // Defense status
       if (this.activeDefense.fireboy) {
         const timeLeft = Math.ceil(
-          (this.defenseDuration -
-            (Date.now() - this.defenseStartTime.fireboy)) /
-            1000
+          this.defenseDuration -
+            (Date.now() - this.defenseStartTime.fireboy) / 1000
         );
         this.ctx.fillStyle = "#ff6b35";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "left";
         this.ctx.fillText(`DEFENSE: ${timeLeft}s`, fireboyX, fireboyY);
       } else if (this.defenseCooldown.fireboy > 0) {
-        const cooldownLeft = Math.ceil(this.defenseCooldown.fireboy);
+        const cooldownLeft = Math.ceil(this.defenseCooldown.fireboy / 1000);
         this.ctx.fillStyle = "#666";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "left";
@@ -1279,34 +1309,33 @@ class Game {
     // Draw defense status for Watergirl
     if (this.watergirl) {
       const watergirlX = this.width - 200;
-      const watergirlY = 95;
+      const watergirlY = 140;
 
       // Defense status
       if (this.activeDefense.watergirl) {
         const timeLeft = Math.ceil(
-          (this.defenseDuration -
-            (Date.now() - this.defenseStartTime.watergirl)) /
-            1000
+          this.defenseDuration -
+            (Date.now() - this.defenseStartTime.watergirl) / 1000
         );
         this.ctx.fillStyle = "#4a90e2";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "right";
-        this.ctx.fillText(`DEFENSE: ${timeLeft}s`, this.width - 20, watergirlY);
+        this.ctx.fillText(`DEFENSE: ${timeLeft}s`, watergirlX, watergirlY);
       } else if (this.defenseCooldown.watergirl > 0) {
-        const cooldownLeft = Math.ceil(this.defenseCooldown.watergirl);
+        const cooldownLeft = Math.ceil(this.defenseCooldown.watergirl / 1000);
         this.ctx.fillStyle = "#666";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "right";
         this.ctx.fillText(
           `DEFENSE COOLDOWN: ${cooldownLeft}s`,
-          this.width - 20,
+          watergirlX,
           watergirlY
         );
       } else {
         this.ctx.fillStyle = "#ffff00";
         this.ctx.font = "bold 14px Arial";
         this.ctx.textAlign = "right";
-        this.ctx.fillText("DEFENSE READY (P)", this.width - 20, watergirlY);
+        this.ctx.fillText("DEFENSE READY (P)", watergirlX, watergirlY);
       }
     }
   }
@@ -1432,7 +1461,7 @@ class Game {
   drawUltimateIndicators() {
     // Fireboy ultimate indicator
     const fireboyX = 20;
-    const fireboyY = 55;
+    const fireboyY = 100;
     const fireboyProgress = Math.min(this.defenseCount.fireboy / 5, 1);
 
     // Background
@@ -1467,7 +1496,7 @@ class Game {
 
     // Watergirl ultimate indicator
     const watergirlX = this.width - 220;
-    const watergirlY = 55;
+    const watergirlY = 100;
     const watergirlProgress = Math.min(this.defenseCount.watergirl / 5, 1);
 
     // Background
@@ -2767,3 +2796,5 @@ class Door {
 window.addEventListener("load", () => {
   window.game = new Game();
 });
+ts
+
