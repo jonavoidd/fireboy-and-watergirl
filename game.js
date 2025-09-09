@@ -212,7 +212,7 @@ class Game {
 
       const barrier = new DefenseBarrier(
         barrierX,
-        this.watergirl.y + this.watergirl.height / 2 -25, // Center vertically
+        this.watergirl.y + this.watergirl.height / 2 - 25, // Center vertically
         defender
       );
       this.defenseWalls.push(barrier);
