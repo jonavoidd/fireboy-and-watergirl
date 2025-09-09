@@ -636,14 +636,14 @@ class Game {
       this.ultimateCooldown.fireboy -= deltaTime;
       if (this.ultimateCooldown.fireboy <= 0) {
         this.ultimateCooldown.fireboy = 0;
-        this.ultimateReady.fireboy = false;
+        // Don't set ultimateReady to false here - it should only be set to true when defenseCount >= 5
       }
     }
     if (this.ultimateCooldown.watergirl > 0) {
       this.ultimateCooldown.watergirl -= deltaTime;
       if (this.ultimateCooldown.watergirl <= 0) {
         this.ultimateCooldown.watergirl = 0;
-        this.ultimateReady.watergirl = false;
+        // Don't set ultimateReady to false here - it should only be set to true when defenseCount >= 5
       }
     }
   }
@@ -760,7 +760,8 @@ class Game {
           // Check if ultimate skill is ready
           if (
             this.defenseCount[defender] >= 5 &&
-            !this.ultimateReady[defender]
+            !this.ultimateReady[defender] &&
+            this.ultimateCooldown[defender] <= 0
           ) {
             this.ultimateReady[defender] = true;
             this.addTextEffect(
@@ -880,26 +881,33 @@ class Game {
     this.projectiles.forEach((projectile, projIndex) => {
       this.defenseWalls.forEach((barrier, barrierIndex) => {
         if (barrier.checkCollision(projectile) && barrier.active) {
-          // Projectile hits active defense barrier - block it
-          this.addEffect(projectile.x, projectile.y, "explosion");
-          this.addTextEffect(
-            projectile.x,
-            projectile.y - 20,
-            "BLOCKED!",
-            "#ffff00"
-          );
-          this.playSound(300, 0.3, "square");
+          // Check if the projectile belongs to the same player as the barrier
+          const projectileOwner =
+            projectile.type === "fireball" ? "fireboy" : "watergirl";
 
-          // Award defense points only for successful blocks with active defense
-          if (window.pointSystem) {
-            window.pointSystem.addPoints(barrier.defender, 1, "defense");
+          // Only block projectiles from the opposite player
+          if (projectileOwner !== barrier.defender) {
+            // Projectile hits active defense barrier - block it
+            this.addEffect(projectile.x, projectile.y, "explosion");
+            this.addTextEffect(
+              projectile.x,
+              projectile.y - 20,
+              "BLOCKED!",
+              "#ffff00"
+            );
+            this.playSound(300, 0.3, "square");
+
+            // Award defense points only for successful blocks with active defense
+            if (window.pointSystem) {
+              window.pointSystem.addPoints(barrier.defender, 1, "defense");
+            }
+
+            // Track defense count for ultimate
+            this.defenseCount[barrier.defender]++;
+
+            // Remove the projectile
+            this.projectiles.splice(projIndex, 1);
           }
-
-          // Track defense count for ultimate
-          this.defenseCount[barrier.defender]++;
-
-          // Remove the projectile
-          this.projectiles.splice(projIndex, 1);
         }
       });
     });
@@ -1029,7 +1037,6 @@ class Game {
     this.drawHealthBars();
     this.drawDoorUI();
     this.drawDefenseUI();
-    this.drawUltimateButtons();
   }
 
   drawLoadingScreen() {
@@ -1125,7 +1132,7 @@ class Game {
     // Fireboy label
     this.ctx.fillStyle = "#fff";
     this.ctx.font = "bold 12px Arial";
-    this.ctx.fillText("Fireboy", 20, 16);
+    this.ctx.fillText("Fireboy", 64, 16);
 
     // Watergirl health bar background
     this.ctx.fillStyle = "#333";
@@ -1192,29 +1199,6 @@ class Game {
         );
       }
     }
-
-    // Draw global points if available
-    if (window.pointSystem) {
-      const leaderboard = window.pointSystem.getLeaderboard();
-      this.ctx.fillStyle = "#fff";
-      this.ctx.font = "bold 14px Arial";
-      this.ctx.textAlign = "left";
-      this.ctx.fillText(
-        `Global Points - Fireboy: ${leaderboard.fireboy.totalPoints} | Watergirl: ${leaderboard.watergirl.totalPoints}`,
-        20,
-        this.height - 20
-      );
-    }
-
-    // Draw defense counts
-    this.ctx.fillStyle = "#ffff00";
-    this.ctx.font = "bold 12px Arial";
-    this.ctx.textAlign = "left";
-    this.ctx.fillText(
-      `Defense - Fireboy: ${this.defenseCount.fireboy} | Watergirl: ${this.defenseCount.watergirl}`,
-      20,
-      this.height - 40
-    );
 
     // Draw ultimate skill indicators
     this.drawUltimateIndicators();
@@ -1432,18 +1416,24 @@ class Game {
     // Text
     this.ctx.fillStyle = "#fff";
     this.ctx.font = "bold 12px Arial";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(
-      `Fireboy Ultimate: ${this.defenseCount.fireboy}/5`,
-      fireboyX + 100,
-      fireboyY + 14
-    );
+    this.ctx.textAlign = "left";
 
-    // Ready indicator
-    if (this.ultimateReady.fireboy) {
+    if (this.defenseCount.fireboy >= 5) {
       this.ctx.fillStyle = "#ffff00";
-      this.ctx.font = "bold 14px Arial";
-      this.ctx.fillText("READY! (E)", fireboyX + 100, fireboyY - 5);
+      this.ctx.font = "bold 12px Arial";
+      this.ctx.fillText(
+        "Ultimate is Ready, Press E",
+        fireboyX + 5,
+        fireboyY + 14
+      );
+    } else {
+      this.ctx.fillStyle = "#fff";
+      this.ctx.font = "bold 12px Arial";
+      this.ctx.fillText(
+        `Fireboy Ultimate: ${this.defenseCount.fireboy}/5`,
+        fireboyX + 5,
+        fireboyY + 14
+      );
     }
 
     // Watergirl ultimate indicator
@@ -1467,18 +1457,24 @@ class Game {
     // Text
     this.ctx.fillStyle = "#fff";
     this.ctx.font = "bold 12px Arial";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(
-      `Watergirl Ultimate: ${this.defenseCount.watergirl}/5`,
-      watergirlX + 100,
-      watergirlY + 14
-    );
+    this.ctx.textAlign = "right";
 
-    // Ready indicator
-    if (this.ultimateReady.watergirl) {
+    if (this.defenseCount.watergirl >= 5) {
       this.ctx.fillStyle = "#ffff00";
-      this.ctx.font = "bold 14px Arial";
-      this.ctx.fillText("READY! (O)", watergirlX + 100, watergirlY - 5);
+      this.ctx.font = "bold 12px Arial";
+      this.ctx.fillText(
+        "Ultimate is Ready, Press O",
+        watergirlX + 195,
+        watergirlY + 14
+      );
+    } else {
+      this.ctx.fillStyle = "#fff";
+      this.ctx.font = "bold 12px Arial";
+      this.ctx.fillText(
+        `Watergirl Ultimate: ${this.defenseCount.watergirl}/5`,
+        watergirlX + 195,
+        watergirlY + 14
+      );
     }
   }
 
@@ -1703,10 +1699,11 @@ class Fireboy extends Character {
       this.shoot("fireball", window.game);
     }
     // Ultimate shooting
-    if (keys["KeyE"] && window.game.ultimateReady.fireboy) {
+    if (keys["KeyE"] && window.game.defenseCount.fireboy >= 5) {
       this.shootUltimate("fireball", window.game);
       window.game.ultimateReady.fireboy = false;
-      window.game.ultimateCooldown.fireboy = 10000; // 10 second cooldown
+      window.game.ultimateCooldown.fireboy = 10; // 10 second cooldown
+      window.game.defenseCount.fireboy = 0; // Reset defense count
     }
   }
 }
@@ -1738,10 +1735,11 @@ class Watergirl extends Character {
       this.shoot("waterball", window.game);
     }
     // Ultimate shooting
-    if (keys["KeyO"] && window.game.ultimateReady.watergirl) {
+    if (keys["KeyO"] && window.game.defenseCount.watergirl >= 5) {
       this.shootUltimate("waterball", window.game);
       window.game.ultimateReady.watergirl = false;
-      window.game.ultimateCooldown.watergirl = 10000; // 10 second cooldown
+      window.game.ultimateCooldown.watergirl = 10; // 10 second cooldown
+      window.game.defenseCount.watergirl = 0; // Reset defense count
     }
   }
 }
