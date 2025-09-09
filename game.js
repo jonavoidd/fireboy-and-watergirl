@@ -2053,24 +2053,28 @@ class Character {
 
     if (this.type === "fireboy" && window.game.assets.fireboySprite) {
       // Draw Fireboy sprite
+      const targetHeight = 60; // Standard height
+      const targetWidth = 40; // Standard width
       ctx.drawImage(
         window.game.assets.fireboySprite,
         this.x,
         this.y,
-        this.width,
-        this.height
+        targetWidth,
+        targetHeight
       );
     } else if (
       this.type === "watergirl" &&
       window.game.assets.watergirlSprite
     ) {
-      // Draw Watergirl sprite
+      // Draw Watergirl sprite - match Fireboy's height exactly
+      const targetHeight = 60; // Match Fireboy's height
+      const targetWidth = 40; // Match Fireboy's width
       ctx.drawImage(
         window.game.assets.watergirlSprite,
         this.x,
         this.y,
-        this.width,
-        this.height
+        targetWidth,
+        targetHeight
       );
     } else {
       // Fallback to colored rectangles if sprites not loaded
