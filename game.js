@@ -664,8 +664,15 @@ class Game {
 
   checkProjectileCollisions() {
     // Check for projectile vs projectile collisions
-    for (let i = this.projectiles.length - 1; i >= 0; i--) {
-      for (let j = i - 1; j >= 0; j--) {
+    // Use a different approach to avoid array modification issues
+    const projectilesToRemove = new Set();
+    
+    for (let i = 0; i < this.projectiles.length; i++) {
+      if (projectilesToRemove.has(i)) continue; // Skip already marked projectiles
+      
+      for (let j = i + 1; j < this.projectiles.length; j++) {
+        if (projectilesToRemove.has(j)) continue; // Skip already marked projectiles
+        
         const proj1 = this.projectiles[i];
         const proj2 = this.projectiles[j];
 
@@ -715,14 +722,20 @@ class Game {
             this.playSound(400, 0.8, "triangle");
           }
 
-          // Remove both projectiles (no automatic defense walls)
-          this.projectiles.splice(i, 1);
-          this.projectiles.splice(j, 1);
-
-          // Break out of inner loop since we modified the array
+          // Mark both projectiles for removal
+          projectilesToRemove.add(i);
+          projectilesToRemove.add(j);
+          
+          // Break out of inner loop since we found a collision
           break;
         }
       }
+    }
+    
+    // Remove marked projectiles in reverse order to maintain correct indices
+    const sortedIndices = Array.from(projectilesToRemove).sort((a, b) => b - a);
+    for (const index of sortedIndices) {
+      this.projectiles.splice(index, 1);
     }
   }
 
