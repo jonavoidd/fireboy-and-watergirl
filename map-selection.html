@@ -61,6 +61,16 @@
             left: 0;
             pointer-events: none;
             z-index: 5;
+            animation: pathGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes pathGlow {
+            0%, 100% { 
+                filter: brightness(1) drop-shadow(0 0 5px rgba(212, 175, 55, 0.3));
+            }
+            50% { 
+                filter: brightness(1.2) drop-shadow(0 0 15px rgba(212, 175, 55, 0.6));
+            }
         }
 
         /* Level nodes container */
@@ -78,6 +88,12 @@
             height: 80px;
             cursor: pointer;
             transition: all 0.3s ease;
+            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
+        }
+
+        .level-node:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.6));
         }
 
         .level-gem {
@@ -123,10 +139,27 @@
             background: linear-gradient(135deg, #666, #888, #666);
             filter: grayscale(100%);
             animation: none;
+            position: relative;
+        }
+
+        .level-node.locked .level-gem::after {
+            content: '🔒';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            z-index: 3;
         }
 
         .level-node.locked {
             cursor: not-allowed;
+            filter: drop-shadow(0 0 5px rgba(100, 100, 100, 0.3));
+        }
+
+        .level-node.locked:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 10px rgba(100, 100, 100, 0.5));
         }
 
         /* Completed levels */
@@ -169,18 +202,19 @@
         /* Level info popup */
         .level-info {
             position: absolute;
-            bottom: -60px;
+            bottom: -120px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             border: 2px solid #d4af37;
-            padding: 8px 15px;
-            border-radius: 5px;
-            white-space: nowrap;
+            padding: 15px 20px;
+            border-radius: 10px;
+            min-width: 200px;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
             z-index: 20;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.8);
         }
 
         .level-node:hover .level-info {
@@ -189,8 +223,36 @@
 
         .level-name {
             color: #d4af37;
-            font-size: 14px;
-            margin-bottom: 3px;
+            font-size: 16px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .level-description {
+            color: #8B7355;
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .level-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .level-difficulty {
+            color: #ff6b35;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .level-mode {
+            color: #4a90e2;
+            font-size: 11px;
+            font-weight: bold;
         }
 
         .level-stars {
@@ -301,19 +363,74 @@
     <script>
         // Level data
         const levels = [
-            { id: 1, name: "Tutorial Arena", x: 150, y: 450, stars: 0, unlocked: true, shape: 'diamond' },
-            { id: 2, name: "Competitive Battle", x: 300, y: 350, stars: 0, unlocked: false, shape: 'hexagon' },
-            { id: 3, name: "Cooperative Puzzle", x: 450, y: 250, stars: 0, unlocked: false, shape: 'diamond' },
-            { id: 4, name: "Boss Chamber", x: 600, y: 350, stars: 0, unlocked: false, shape: 'triangle' },
-            { id: 5, name: "Final Showdown", x: 750, y: 450, stars: 0, unlocked: false, shape: 'hexagon' }
+            { 
+                id: 1, 
+                name: "Tutorial Arena", 
+                description: "Learn the basics of combat and movement",
+                x: 150, 
+                y: 450, 
+                stars: 0, 
+                unlocked: true, 
+                shape: 'diamond',
+                difficulty: "Easy",
+                mode: "Tutorial"
+            },
+            { 
+                id: 2, 
+                name: "Competitive Battle", 
+                description: "Face off in intense 1v1 combat",
+                x: 300, 
+                y: 350, 
+                stars: 0, 
+                unlocked: false, 
+                shape: 'hexagon',
+                difficulty: "Medium",
+                mode: "Competitive"
+            },
+            { 
+                id: 3, 
+                name: "Cooperative Puzzle", 
+                description: "Work together to solve challenges",
+                x: 450, 
+                y: 250, 
+                stars: 0, 
+                unlocked: false, 
+                shape: 'diamond',
+                difficulty: "Medium",
+                mode: "Cooperative"
+            },
+            { 
+                id: 4, 
+                name: "Boss Chamber", 
+                description: "Face the ultimate challenge",
+                x: 600, 
+                y: 350, 
+                stars: 0, 
+                unlocked: false, 
+                shape: 'triangle',
+                difficulty: "Hard",
+                mode: "Boss Battle"
+            },
+            { 
+                id: 5, 
+                name: "Final Showdown", 
+                description: "The ultimate test of skill",
+                x: 750, 
+                y: 450, 
+                stars: 0, 
+                unlocked: false, 
+                shape: 'hexagon',
+                difficulty: "Expert",
+                mode: "Final Battle"
+            }
         ];
         
-        // Path connections between levels
+        // Path connections between levels (using array indices)
         const paths = [
-            { from: 0, to: 1 },
-            { from: 1, to: 2 },
-            { from: 2, to: 3 },
-            { from: 3, to: 4 }
+            { from: 0, to: 1 }, // Level 1 to Level 2
+            { from: 1, to: 2 }, // Level 2 to Level 3
+            { from: 2, to: 3 }, // Level 3 to Level 4
+            { from: 3, to: 4 }  // Level 4 to Level 5
         ];
         
         // Load progress from localStorage
@@ -353,23 +470,65 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
-            ctx.strokeStyle = '#d4af37';
-            ctx.lineWidth = 4;
-            ctx.setLineDash([10, 10]);
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            paths.forEach(path => {
+            // Draw connecting paths
+            ctx.strokeStyle = '#d4af37';
+            ctx.lineWidth = 6;
+            
+            // Animated dashed line effect
+            const time = Date.now() * 0.001;
+            const dashOffset = (time * 50) % 25; // Animate the dash pattern
+            ctx.setLineDash([15, 10]);
+            ctx.lineDashOffset = dashOffset;
+            ctx.lineCap = 'round';
+            
+            // Add glow effect
+            ctx.shadowColor = '#d4af37';
+            ctx.shadowBlur = 10;
+            
+            paths.forEach((path, index) => {
                 const fromLevel = levels[path.from];
                 const toLevel = levels[path.to];
                 
-                ctx.beginPath();
-                ctx.moveTo(fromLevel.x + 40, fromLevel.y + 40);
-                
-                // Create curved path
-                const controlX = (fromLevel.x + toLevel.x) / 2;
-                const controlY = Math.min(fromLevel.y, toLevel.y) - 50;
-                
-                ctx.quadraticCurveTo(controlX, controlY, toLevel.x + 40, toLevel.y + 40);
-                ctx.stroke();
+                // Only draw path if from level is unlocked
+                if (fromLevel.unlocked) {
+                    ctx.beginPath();
+                    ctx.moveTo(fromLevel.x + 40, fromLevel.y + 40);
+                    
+                    // Create smooth curved path
+                    const midX = (fromLevel.x + toLevel.x) / 2;
+                    const midY = (fromLevel.y + toLevel.y) / 2;
+                    
+                    // Calculate control points for smooth curves
+                    const controlX1 = fromLevel.x + (midX - fromLevel.x) * 0.5;
+                    const controlY1 = fromLevel.y + (midY - fromLevel.y) * 0.3;
+                    const controlX2 = toLevel.x - (toLevel.x - midX) * 0.5;
+                    const controlY2 = toLevel.y - (toLevel.y - midY) * 0.3;
+                    
+                    ctx.bezierCurveTo(
+                        controlX1, controlY1,
+                        controlX2, controlY2,
+                        toLevel.x + 40, toLevel.y + 40
+                    );
+                    ctx.stroke();
+                }
+            });
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+            
+            // Draw path nodes (small circles at connection points)
+            ctx.fillStyle = '#d4af37';
+            ctx.setLineDash([]);
+            
+            levels.forEach((level, index) => {
+                if (index > 0) { // Don't draw node for first level
+                    ctx.beginPath();
+                    ctx.arc(level.x + 40, level.y + 40, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             });
         }
         
@@ -403,6 +562,11 @@
                 info.className = 'level-info';
                 info.innerHTML = `
                     <div class="level-name">${level.name}</div>
+                    <div class="level-description">${level.description}</div>
+                    <div class="level-details">
+                        <span class="level-difficulty">${level.difficulty}</span>
+                        <span class="level-mode">${level.mode}</span>
+                    </div>
                     <div class="level-stars">${'⭐'.repeat(level.stars) || 'Not completed'}</div>
                 `;
                 
@@ -418,6 +582,11 @@
             });
             
             updateProgress();
+            
+            // Redraw paths after creating nodes
+            setTimeout(() => {
+                drawPaths();
+            }, 100);
         }
         
         // Get current level (first uncompleted level)
@@ -445,16 +614,23 @@
         function selectLevel(levelId) {
             const level = levels.find(l => l.id === levelId);
             if (level && level.unlocked) {
-                // Different HTML files for different levels
-                const levelFiles = {
-                    1: 'index.html',           // Tutorial
-                    2: 'level2.html',          // Competitive
-                    3: 'level3.html',          // Cooperative
-                    4: 'level4.html',          // Boss
-                    5: 'level5.html'           // Final
-                };
+                // Show confirmation dialog
+                const confirmMessage = `Start ${level.name}?\n\n${level.description}\n\nDifficulty: ${level.difficulty}\nMode: ${level.mode}`;
                 
-                window.location.href = levelFiles[levelId] || 'index.html';
+                if (confirm(confirmMessage)) {
+                    // Different HTML files for different levels
+                    const levelFiles = {
+                        1: 'index.html',           // Tutorial
+                        2: 'level2.html',          // Competitive
+                        3: 'level3.html',          // Cooperative
+                        4: 'level4.html',          // Boss
+                        5: 'level5.html'           // Final
+                    };
+                    
+                    window.location.href = levelFiles[levelId] || 'index.html';
+                }
+            } else if (!level.unlocked) {
+                alert(`Level ${levelId} is locked!\nComplete the previous level to unlock it.`);
             }
         }
         
@@ -473,14 +649,22 @@
                 }
                 saveProgress();
                 createLevelNodes();
+                drawPaths(); // Redraw paths to show new connections
             }
         };
+        
+        // Animation loop for paths
+        function animatePaths() {
+            drawPaths();
+            requestAnimationFrame(animatePaths);
+        }
         
         // Initialize
         window.addEventListener('load', () => {
             loadProgress();
             createLevelNodes();
             drawPaths();
+            animatePaths(); // Start animation loop
         });
         
         // Redraw paths on resize
