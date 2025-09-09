@@ -3,217 +3,335 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fireboy vs Watergirl - Level 2: Competitive Battle</title>
+    <title>Fireboy vs Watergirl - Level 2: Battle Arena</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-      /* Level 2 Specific Styles */
-      @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
-      
-      body {
-        font-family: 'MedievalSharp', cursive;
-        background: #0a0a0a;
-        color: #d4af37;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-      }
+      /* Main Menu Styles */
+      @import url("https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap");
 
-      #gameHeader {
-        background: linear-gradient(135deg, #2c1810, #4a2818);
-        border-bottom: 3px solid #d4af37;
-        padding: 15px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-      }
-
-      #gameHeader h1 {
-        color: #d4af37;
-        font-size: 1.8em;
-        margin: 0;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-      }
-
-      #gameInfo {
-        display: flex;
-        gap: 30px;
-        align-items: center;
-        color: #d4af37;
-        font-size: 1.1em;
-      }
-
-      #gameInfo > div {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 8px 15px;
-        border-radius: 5px;
-        border: 1px solid #8B7355;
-      }
-
-      #scoreInfo {
-        display: flex;
-        gap: 20px;
-      }
-
-      #fireboyScore {
-        color: #ff6b35;
-        font-weight: bold;
-      }
-
-      #watergirlScore {
-        color: #4a90e2;
-        font-weight: bold;
-      }
-
-      #gameArea {
-        position: relative;
-        width: 100%;
-        height: calc(100vh - 120px);
-        background: linear-gradient(135deg, #1a0f0a, #2a1810);
-        overflow: hidden;
-      }
-
-      #gameCanvas {
-        display: block;
-        background: 
-          radial-gradient(ellipse at center, rgba(139, 69, 19, 0.2) 0%, rgba(0, 0, 0, 0.9) 70%),
-          repeating-linear-gradient(
-            90deg,
-            #2a1810 0px,
-            #3a2420 40px,
-            #2a1810 80px
-          );
-        border: 2px solid #d4af37;
-        box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
-      }
-
-      #gameUI {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        border: 2px solid #d4af37;
-        border-radius: 10px;
-        padding: 15px;
-        max-width: 300px;
-        font-size: 0.9em;
-      }
-
-      #gameUI h3 {
-        color: #d4af37;
-        margin: 0 0 10px 0;
-        font-size: 1.2em;
-      }
-
-      #gameUI p {
-        margin: 5px 0;
-        color: #8B7355;
-        line-height: 1.4;
-      }
-
-      #gameUI strong {
-        color: #d4af37;
-      }
-
-      #objectiveText {
-        color: #ff6b35;
-        font-weight: bold;
-      }
-
-      #gameControls {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 15px;
-        z-index: 100;
-      }
-
-      #gameControls button {
-        background: linear-gradient(135deg, #2c1810, #4a2818);
-        border: 2px solid #d4af37;
-        color: #d4af37;
-        padding: 10px 20px;
-        font-size: 1em;
-        font-family: 'MedievalSharp', cursive;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border-radius: 5px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-
-      #gameControls button:hover {
-        background: linear-gradient(135deg, #4a2818, #6a3828);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
-      }
-
-      #gameControls button:active {
-        transform: translateY(0);
-      }
-
-      #gameOverScreen {
+      .screen {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.9);
         display: flex;
+        flex-direction: column;
+      }
+
+      .screen.hidden {
+        display: none;
+      }
+
+      #mainMenu {
+        font-family: "MedievalSharp", cursive;
+        background: #0a0a0a;
+        color: #d4af37;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Animated dungeon background */
+      .dungeon-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+          repeating-linear-gradient(
+            90deg,
+            #1a1a1a 0px,
+            #2a2a2a 20px,
+            #1a1a1a 40px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            #1a1a1a 0px,
+            #2a2a2a 20px,
+            #1a1a1a 40px
+          );
+        animation: dungeonPulse 10s ease-in-out infinite;
+      }
+
+      @keyframes dungeonPulse {
+        0%,
+        100% {
+          filter: brightness(0.8);
+        }
+        50% {
+          filter: brightness(1.2);
+        }
+      }
+
+      /* Torch effects */
+      .torch {
+        position: absolute;
+        width: 60px;
+        height: 120px;
+      }
+
+      .torch-left {
+        top: 20%;
+        left: 5%;
+      }
+
+      .torch-right {
+        top: 20%;
+        right: 5%;
+      }
+
+      .flame {
+        width: 40px;
+        height: 60px;
+        margin: 0 auto;
+        background: radial-gradient(
+          ellipse at bottom,
+          #ff6b35,
+          #ff8c42,
+          transparent
+        );
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        animation: flicker 1.5s ease-in-out infinite;
+        filter: blur(2px);
+        box-shadow: 0 0 40px #ff6b35, 0 0 80px #ff8c42;
+      }
+
+      @keyframes flicker {
+        0%,
+        100% {
+          transform: scale(1) rotate(-2deg);
+          filter: blur(2px) brightness(1);
+        }
+        25% {
+          transform: scale(1.1) rotate(2deg);
+          filter: blur(1px) brightness(1.3);
+        }
+        50% {
+          transform: scale(0.95) rotate(-1deg);
+          filter: blur(3px) brightness(0.9);
+        }
+        75% {
+          transform: scale(1.05) rotate(1deg);
+          filter: blur(2px) brightness(1.1);
+        }
+      }
+
+      .torch-holder {
+        width: 30px;
+        height: 60px;
+        background: linear-gradient(#654321, #8b4513);
+        margin: 0 auto;
+        border: 2px solid #4a3020;
+      }
+
+      /* Main container */
+      .main-container {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        z-index: 1000;
-        font-family: 'MedievalSharp', cursive;
+        height: 100vh;
+        animation: fadeIn 2s ease-in;
       }
 
-      #gameOverContent {
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Title styling */
+      .game-title {
+        text-align: center;
+        margin-bottom: 50px;
+        position: relative;
+      }
+
+      .title-main {
+        font-size: 4em;
+        background: linear-gradient(45deg, #ff6b35, #4a90e2);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 30px rgba(255, 107, 53, 0.5),
+          0 0 60px rgba(74, 144, 226, 0.5);
+        animation: titleGlow 3s ease-in-out infinite;
+        letter-spacing: 3px;
+      }
+
+      @keyframes titleGlow {
+        0%,
+        100% {
+          filter: brightness(1);
+        }
+        50% {
+          filter: brightness(1.3);
+        }
+      }
+
+      .title-sub {
+        font-size: 1.5em;
+        color: #8b7355;
+        margin-top: 10px;
+        letter-spacing: 5px;
+      }
+
+      /* Menu buttons */
+      .menu-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 300px;
+      }
+
+      .menu-btn {
         background: linear-gradient(135deg, #2c1810, #4a2818);
         border: 3px solid #d4af37;
-        border-radius: 15px;
-        padding: 40px;
-        text-align: center;
-        box-shadow: 
-          inset 0 0 30px rgba(0,0,0,0.5),
-          0 10px 30px rgba(0,0,0,0.8);
-      }
-
-      #gameOverTitle {
         color: #d4af37;
-        font-size: 2.5em;
-        margin-bottom: 20px;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-      }
-
-      #gameOverMessage {
-        color: #8B7355;
+        padding: 15px 30px;
         font-size: 1.3em;
-        margin-bottom: 30px;
-      }
-
-      #restartBtn {
-        background: linear-gradient(135deg, #1a0f0a, #2a1810);
-        border: 2px solid #d4af37;
-        color: #d4af37;
-        padding: 12px 25px;
-        font-size: 1.1em;
-        font-family: 'MedievalSharp', cursive;
+        font-family: "MedievalSharp", cursive;
         cursor: pointer;
+        position: relative;
+        overflow: hidden;
         transition: all 0.3s ease;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        border-radius: 5px;
+        letter-spacing: 2px;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5),
+          0 5px 15px rgba(0, 0, 0, 0.8);
       }
 
-      #restartBtn:hover {
-        background: linear-gradient(135deg, #2a1810, #3a2420);
+      .menu-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(212, 175, 55, 0.3),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .menu-btn:hover::before {
+        left: 100%;
+      }
+
+      .menu-btn:hover {
+        background: linear-gradient(135deg, #4a2818, #6a3828);
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+        box-shadow: inset 0 0 30px rgba(212, 175, 55, 0.2),
+          0 8px 20px rgba(0, 0, 0, 0.9);
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
       }
 
-      .hidden {
-        display: none !important;
+      .menu-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Character sprites */
+      .characters {
+        position: absolute;
+        bottom: 10%;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 10%;
+      }
+
+      .character {
+        width: 80px;
+        height: 100px;
+        animation: characterFloat 3s ease-in-out infinite;
+      }
+
+      .character.fireboy {
+        background: linear-gradient(135deg, #ff6b35, #ff8c42);
+        border-radius: 40% 40% 50% 50%;
+        box-shadow: 0 0 30px #ff6b35;
+        animation-delay: 0s;
+      }
+
+      .character.watergirl {
+        background: linear-gradient(135deg, #4a90e2, #87ceeb);
+        border-radius: 40% 40% 50% 50%;
+        box-shadow: 0 0 30px #4a90e2;
+        animation-delay: 1.5s;
+      }
+
+      @keyframes characterFloat {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+
+      /* Settings and credits */
+      .bottom-buttons {
+        position: absolute;
+        bottom: 20px;
+        display: flex;
+        gap: 20px;
+      }
+
+      .small-btn {
+        background: rgba(42, 24, 16, 0.8);
+        border: 2px solid #8b7355;
+        color: #8b7355;
+        padding: 8px 20px;
+        font-size: 0.9em;
+        font-family: "MedievalSharp", cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .small-btn:hover {
+        background: rgba(74, 40, 24, 0.9);
+        color: #d4af37;
+        border-color: #d4af37;
+      }
+
+      /* Particle effects */
+      .particle {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: #d4af37;
+        pointer-events: none;
+        border-radius: 50%;
+        animation: float-up 4s linear infinite;
+      }
+
+      @keyframes float-up {
+        0% {
+          transform: translateY(100vh) translateX(0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100vh) translateX(50px);
+          opacity: 0;
+        }
       }
 
       /* Pause Menu Styles */
@@ -228,7 +346,7 @@
         align-items: center;
         justify-content: center;
         z-index: 1000;
-        font-family: 'MedievalSharp', cursive;
+        font-family: "MedievalSharp", cursive;
       }
 
       #pauseContent {
@@ -237,9 +355,8 @@
         border-radius: 15px;
         padding: 40px;
         text-align: center;
-        box-shadow: 
-          inset 0 0 30px rgba(0,0,0,0.5),
-          0 10px 30px rgba(0,0,0,0.8);
+        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5),
+          0 10px 30px rgba(0, 0, 0, 0.8);
         animation: pauseSlideIn 0.3s ease-out;
       }
 
@@ -275,24 +392,28 @@
         color: #d4af37;
         padding: 12px 25px;
         font-size: 1.1em;
-        font-family: 'MedievalSharp', cursive;
+        font-family: "MedievalSharp", cursive;
         cursor: pointer;
         transition: all 0.3s ease;
         text-transform: uppercase;
         letter-spacing: 1px;
         position: relative;
         overflow: hidden;
-        border-radius: 5px;
       }
 
       .pause-btn::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(212, 175, 55, 0.2),
+          transparent
+        );
         transition: left 0.5s ease;
       }
 
@@ -303,100 +424,198 @@
       .pause-btn:hover {
         background: linear-gradient(135deg, #2a1810, #3a2420);
         transform: translateY(-2px);
-        box-shadow: 
-          inset 0 0 20px rgba(212, 175, 55, 0.1),
-          0 5px 15px rgba(0,0,0,0.6);
+        box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.1),
+          0 5px 15px rgba(0, 0, 0, 0.6);
         text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
       }
 
       .pause-btn:active {
         transform: translateY(0);
       }
-
-      /* Level 2 specific indicators */
-      .level-indicator {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        border: 2px solid #d4af37;
-        border-radius: 10px;
-        padding: 10px 15px;
-        color: #d4af37;
-        font-size: 1.1em;
-        font-weight: bold;
-      }
-
-      .competitive-mode {
-        color: #ff6b35;
-        text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
-      }
     </style>
   </head>
   <body>
-    <div id="gameHeader">
-      <h1>🔥 vs 💧 Level 2: Competitive Battle</h1>
-      <div id="gameInfo">
-        <div id="levelInfo">Level: <span id="currentLevel">2</span></div>
-        <div id="modeInfo">
-          Mode: <span id="currentMode" class="competitive-mode">Competitive</span>
+    <!-- Main Menu Screen -->
+    <div id="mainMenu" class="screen">
+      <div class="dungeon-bg"></div>
+
+      <!-- Torches -->
+      <div class="torch torch-left">
+        <div class="flame"></div>
+        <div class="torch-holder"></div>
+      </div>
+      <div class="torch torch-right">
+        <div class="flame"></div>
+        <div class="torch-holder"></div>
+      </div>
+
+      <div class="main-container">
+        <div class="game-title">
+          <h1 class="title-main">FIREBOY vs WATERGIRL</h1>
+          <p class="title-sub">LEVEL 2 - DUNGEON BATTLES</p>
         </div>
-        <div id="scoreInfo">
-          <span id="fireboyScore">Fireboy: 0</span>
-          <span id="watergirlScore">Watergirl: 0</span>
+
+        <div class="menu-buttons">
+          <button class="menu-btn" onclick="startGame()">
+            Start Level 2
+          </button>
+          <button class="menu-btn" onclick="selectMap()">Select Map</button>
+
+          <button class="menu-btn" onclick="showInstructions()">
+            How to Play
+          </button>
+          <button class="menu-btn" onclick="showLeaderboard()">
+            Leaderboard
+          </button>
+        </div>
+
+        <div class="bottom-buttons">
+          <button class="small-btn" onclick="showSettings()">Settings</button>
+          <button class="small-btn" onclick="showCredits()">Credits</button>
         </div>
       </div>
-    </div>
 
-    <div id="gameArea">
-      <div class="level-indicator">
-        🏆 COMPETITIVE BATTLE
-      </div>
-      
-      <canvas id="gameCanvas" width="1000" height="600"></canvas>
-      
-      <div id="gameUI">
-        <h3>Level 2: Competitive Battle</h3>
-        <p>
-          <strong>Objective:</strong> <span id="objectiveText">Defeat your opponent in intense 1v1 combat!</span>
-        </p>
-        <p>
-          <strong>Special Features:</strong>
-        </p>
-        <p>• Faster projectile speeds</p>
-        <p>• Reduced defense cooldowns</p>
-        <p>• More aggressive AI</p>
-        <p>• Power-up spawns every 10 seconds</p>
-        <p>• First to 5 kills wins!</p>
+      <div class="characters">
+        <div class="character fireboy"></div>
+        <div class="character watergirl"></div>
       </div>
     </div>
 
-    <div id="gameControls">
-      <button id="startBtn">Start Battle</button>
-      <button id="pauseBtn">Pause</button>
-      <button id="resetBtn">Reset Level</button>
-      <button id="backToMapBtn">Back to Map</button>
-    </div>
+    <!-- Game Screen -->
+    <div id="gameContainer" class="screen hidden">
+      <div id="gameHeader">
+        <h1>Fireboy vs Watergirl - Level 2</h1>
+        <div id="gameInfo">
+          <div id="levelInfo">Level: <span id="currentLevel">2</span></div>
+          <div id="modeInfo">
+            Mode: <span id="currentMode">Competitive</span>
+          </div>
+          <div id="scoreInfo">
+            <span id="fireboyScore">Fireboy: 0</span>
+            <span id="watergirlScore">Watergirl: 0</span>
+          </div>
+        </div>
+      </div>
 
-    <div id="gameOverScreen" class="hidden">
-      <div id="gameOverContent">
-        <h2 id="gameOverTitle">Battle Complete!</h2>
-        <p id="gameOverMessage">Fireboy Wins!</p>
-        <button id="restartBtn">Battle Again</button>
+      <div id="gameArea">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <div id="gameUI">
+          <div id="instructions">
+            <h3>Controls:</h3>
+
+            <!-- Fireboy Controls -->
+            <div class="player-controls">
+              <h4 class="player-title fireboy-title">🔥 Fireboy</h4>
+              <div class="control-group">
+                <div class="control-label">Movement</div>
+                <div class="keyboard-keys">
+                  <div class="key-row">
+                    <div class="key key-w">W</div>
+                  </div>
+                  <div class="key-row">
+                    <div class="key key-a">A</div>
+                    <div class="key key-s">S</div>
+                    <div class="key key-d">D</div>
+                  </div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Attack</div>
+                <div class="keyboard-keys">
+                  <div class="key key-space">Space</div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Defense</div>
+                <div class="keyboard-keys">
+                  <div class="key key-q">Q</div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Ultimate</div>
+                <div class="keyboard-keys">
+                  <div class="key key-e">E</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Watergirl Controls -->
+            <div class="player-controls">
+              <h4 class="player-title watergirl-title">💧 Watergirl</h4>
+              <div class="control-group">
+                <div class="control-label">Movement</div>
+                <div class="keyboard-keys">
+                  <div class="key-row">
+                    <div class="key key-up">↑</div>
+                  </div>
+                  <div class="key-row">
+                    <div class="key key-left">←</div>
+                    <div class="key key-down">↓</div>
+                    <div class="key key-right">→</div>
+                  </div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Attack</div>
+                <div class="keyboard-keys">
+                  <div class="key key-enter">Enter</div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Defense</div>
+                <div class="keyboard-keys">
+                  <div class="key key-p">P</div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Ultimate</div>
+                <div class="keyboard-keys">
+                  <div class="key key-o">O</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="game-info">
+              <p>
+                <strong>Defense:</strong> Press Q/P to create a thin barrier
+                that blocks projectiles for 3 seconds. 7s cooldown!
+              </p>
+              <p>
+                <strong>Objective:</strong>
+                <span id="objectiveText">Defeat your opponent!</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gameControls">
+        <button id="startBtn">Start Game</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn">Reset Level</button>
         <button id="nextLevelBtn" style="display: none">Next Level</button>
-        <button id="backToMapBtn2">Back to Map</button>
       </div>
-    </div>
 
-    <!-- Pause Menu -->
-    <div id="pauseMenu" class="hidden">
-      <div id="pauseContent">
-        <h2>Battle Paused</h2>
-        <div class="pause-buttons">
-          <button id="resumeBtn" class="pause-btn">Resume Battle</button>
-          <button id="restartPauseBtn" class="pause-btn">Restart Level</button>
-          <button id="mainMenuBtn" class="pause-btn">Main Menu</button>
-          <button id="mapSelectionBtn" class="pause-btn">Map Selection</button>
+      <div id="gameOverScreen" class="hidden">
+        <div id="gameOverContent">
+          <h2 id="gameOverTitle">Game Over</h2>
+          <p id="gameOverMessage">Fireboy Wins!</p>
+          <button id="restartBtn">Play Again</button>
+        </div>
+      </div>
+
+      <!-- Pause Menu -->
+      <div id="pauseMenu" class="hidden">
+        <div id="pauseContent">
+          <h2>Game Paused</h2>
+          <div class="pause-buttons">
+            <button id="resumeBtn" class="pause-btn">Resume Game</button>
+            <button id="restartPauseBtn" class="pause-btn">
+              Restart Level
+            </button>
+            <button id="mainMenuBtn" class="pause-btn">Main Menu</button>
+            <button id="settingsPauseBtn" class="pause-btn">Settings</button>
+          </div>
         </div>
       </div>
     </div>
@@ -404,234 +623,165 @@
     <script src="settings.js"></script>
     <script src="pointSystem.js"></script>
     <script src="game.js"></script>
-    
+
     <script>
-      // Level 2 specific game initialization
-      class Level2Game extends Game {
-        constructor() {
-          super();
-          this.currentLevel = 2;
-          this.gameMode = "competitive";
-          this.maxKills = 5; // First to 5 kills wins
-          this.killCount = {
-            fireboy: 0,
-            watergirl: 0
-          };
-          
-          // Level 2 specific settings
-          this.projectileSpeed = 8; // Faster than tutorial
-          this.defenseCooldownTime = 8000; // Reduced from 10s to 8s
-          this.powerUpSpawnRate = 10000; // Every 10 seconds
-          this.enemyAggression = 1.5; // More aggressive AI
-        }
+      // Main Menu Functions
+      function createParticle() {
+        const particle = document.createElement("div");
+        particle.className = "particle";
+        particle.style.left = Math.random() * window.innerWidth + "px";
+        particle.style.animationDelay = Math.random() * 4 + "s";
+        particle.style.animationDuration = 4 + Math.random() * 2 + "s";
+        document.body.appendChild(particle);
 
-        createLevel(levelNumber) {
-          super.createLevel(levelNumber);
-          
-          // Level 2 specific setup
-          this.setupCompetitiveLevel();
-        }
-
-        setupCompetitiveLevel() {
-          // Create more challenging platforms
-          this.platforms = [
-            // Main platforms
-            { x: 100, y: 500, width: 200, height: 20, type: 'normal' },
-            { x: 350, y: 400, width: 150, height: 20, type: 'normal' },
-            { x: 550, y: 300, width: 200, height: 20, type: 'normal' },
-            { x: 800, y: 500, width: 200, height: 20, type: 'normal' },
-            
-            // Floating platforms for more dynamic gameplay
-            { x: 250, y: 300, width: 100, height: 15, type: 'floating' },
-            { x: 450, y: 200, width: 100, height: 15, type: 'floating' },
-            { x: 700, y: 400, width: 100, height: 15, type: 'floating' },
-            
-            // Ground platforms
-            { x: 0, y: 580, width: 1000, height: 20, type: 'ground' }
-          ];
-
-          // Spawn initial power-ups
-          this.spawnPowerUp();
-          
-          // Update UI for competitive mode
-          document.getElementById('objectiveText').textContent = 'First to 5 kills wins!';
-        }
-
-        spawnPowerUp() {
-          // More frequent power-up spawning for competitive play
-          const powerUpTypes = ['speed', 'damage', 'defense', 'health'];
-          const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
-          
-          const powerUp = {
-            x: Math.random() * (this.width - 40) + 20,
-            y: Math.random() * (this.height - 200) + 100,
-            width: 20,
-            height: 20,
-            type: randomType,
-            collected: false,
-            spawnTime: Date.now()
-          };
-          
-          this.powerUps.push(powerUp);
-        }
-
-        update(deltaTime) {
-          super.update(deltaTime);
-          
-          // Level 2 specific updates
-          this.updateCompetitiveFeatures(deltaTime);
-        }
-
-        updateCompetitiveFeatures(deltaTime) {
-          // Spawn power-ups more frequently
-          if (Date.now() - this.lastPowerUpSpawn > this.powerUpSpawnRate) {
-            this.spawnPowerUp();
-            this.lastPowerUpSpawn = Date.now();
-          }
-
-          // Check for kill count victory
-          if (this.killCount.fireboy >= this.maxKills) {
-            this.endGame("Fireboy Wins!", "fireboy");
-          } else if (this.killCount.watergirl >= this.maxKills) {
-            this.endGame("Watergirl Wins!", "watergirl");
-          }
-        }
-
-        onPlayerHit(player, projectile) {
-          super.onPlayerHit(player, projectile);
-          
-          // Track kills for competitive mode
-          if (player.health <= 0) {
-            if (player === this.fireboy) {
-              this.killCount.watergirl++;
-            } else {
-              this.killCount.fireboy++;
-            }
-            
-            // Respawn player after short delay
-            setTimeout(() => {
-              this.respawnPlayer(player);
-            }, 2000);
-          }
-        }
-
-        respawnPlayer(player) {
-          // Respawn player at safe location
-          player.x = player === this.fireboy ? 150 : 750;
-          player.y = 500;
-          player.health = player.maxHealth;
-          player.velocityX = 0;
-          player.velocityY = 0;
-        }
-
-        endGame(message, winner) {
-          this.gameState = "gameOver";
-          document.getElementById('gameOverMessage').textContent = message;
-          document.getElementById('gameOverTitle').textContent = "Battle Complete!";
-          
-          // Show appropriate buttons
-          document.getElementById('restartBtn').style.display = 'inline-block';
-          document.getElementById('nextLevelBtn').style.display = 'none';
-          document.getElementById('backToMapBtn2').style.display = 'inline-block';
-          
-          document.getElementById('gameOverScreen').classList.remove('hidden');
-          
-          // Update points system
-          if (window.updatePoints) {
-            window.updatePoints(winner, 100); // Bonus points for level 2 victory
-          }
-          
-          // Unlock next level
-          if (window.unlockNextLevel) {
-            window.unlockNextLevel(2, 3); // 3 stars for completing level 2
-          }
-        }
-
-        resetLevel() {
-          super.resetLevel();
-          this.killCount = { fireboy: 0, watergirl: 0 };
-          this.setupCompetitiveLevel();
-        }
+        setTimeout(() => {
+          particle.remove();
+        }, 6000);
       }
 
-      // Initialize Level 2 Game
-      let game = null;
+      // Create particles periodically
+      setInterval(createParticle, 300);
 
-      // Game control functions
+      // Menu functions
       function startGame() {
-        if (!game) {
-          game = new Level2Game();
+        // Hide main menu and show game
+        document.getElementById("mainMenu").classList.add("hidden");
+        document.getElementById("gameContainer").classList.remove("hidden");
+
+        // Initialize the game if not already initialized
+        if (!window.game) {
+          window.game = new Game();
         } else {
-          game.resetLevel();
-          game.gameState = "playing";
+          // Reset game state
+          window.game.currentLevel = 2;
+          window.game.fireboyScore = 0;
+          window.game.watergirlScore = 0;
+          window.game.createLevel(window.game.currentLevel);
+          window.game.gameState = "playing";
         }
-        document.getElementById('startBtn').textContent = 'Restart Battle';
       }
 
-      function pauseGame() {
-        if (game) {
-          game.gameState = "paused";
-          document.getElementById('pauseMenu').classList.remove('hidden');
+      function selectMap() {
+        // Go to map selection
+        window.location.href = "map-selection.html";
+      }
+
+      function showInstructions() {
+        alert(
+          "CONTROLS:\n\nFireboy:\n• WASD to move\n• Space to shoot fireball\n• Shift for Ultimate (after 5 defenses)\n• Q for Defense Barrier (3s duration, 7s cooldown)\n\nWatergirl:\n• Arrow Keys to move\n• Enter to shoot waterball\n• Shift for Ultimate (after 5 defenses)\n• P for Defense Barrier (3s duration, 7s cooldown)\n\nOBJECTIVE:\n• Collect power-ups and defeat enemies\n• Reach the doors before your opponent!\n• Block enemy projectiles to build ultimate power\n• Use defense barriers strategically!\n\nGAME FEATURES:\n• Door System: Doors spawn every 15-30 seconds\n• Defense System: Block projectiles to gain ultimate abilities\n• Ultimate Attacks: Powerful attacks after 5 successful defenses\n• Defense Barriers: Create temporary shields with Q/P keys\n• Point System: Track your progress and compete!"
+        );
+      }
+
+      function showLeaderboard() {
+        // Try to load scores from localStorage
+        try {
+          const savedProgress = localStorage.getItem("fireboyWatergirlPoints");
+          if (savedProgress) {
+            const data = JSON.parse(savedProgress);
+            alert(
+              `LEADERBOARD\n\n🔥 Fireboy\nTotal Points: ${
+                data.fireboyPoints || 0
+              }\nDoor Wins: ${
+                data.doorWins?.fireboy || 0
+              }\n\n💧 Watergirl\nTotal Points: ${
+                data.watergirlPoints || 0
+              }\nDoor Wins: ${data.doorWins?.watergirl || 0}\n\nTotal Rounds: ${
+                data.totalRounds || 0
+              }`
+            );
+          } else {
+            alert("No scores yet! Play some games first!");
+          }
+        } catch (e) {
+          alert("No scores yet! Play some games first!");
+        }
+      }
+
+      function showSettings() {
+        alert(
+          "SETTINGS\n\nSound: ON ✓\nMusic: ON ✓\nParticles: ON ✓\n\n(Settings menu coming soon!)"
+        );
+      }
+
+      function showCredits() {
+        alert(
+          "FIREBOY VS WATERGIRL\nDungeon Battles - Level 2\n\nA competitive twist on the classic game!\n\nCreated with:\n• HTML5 Canvas\n• CSS3 Animations\n• Vanilla JavaScript\n• Enhanced Combat System\n• Door & Defense Mechanics\n• Defense Barriers\n\nThank you for playing!"
+        );
+      }
+
+      // Pause Menu Functions
+      function showPauseMenu() {
+        document.getElementById("pauseMenu").classList.remove("hidden");
+        if (window.game) {
+          window.game.gameState = "paused";
+        }
+      }
+
+      function hidePauseMenu() {
+        document.getElementById("pauseMenu").classList.add("hidden");
+        if (window.game) {
+          window.game.gameState = "playing";
         }
       }
 
       function resumeGame() {
-        if (game) {
-          game.gameState = "playing";
-          document.getElementById('pauseMenu').classList.add('hidden');
+        hidePauseMenu();
+      }
+
+      function restartFromPause() {
+        hidePauseMenu();
+        if (window.game) {
+          window.game.resetLevel();
         }
       }
 
-      function resetLevel() {
-        if (game) {
-          game.resetLevel();
-        }
+      function goToMainMenuFromPause() {
+        hidePauseMenu();
+        document.getElementById("gameContainer").classList.add("hidden");
+        document.getElementById("mainMenu").classList.remove("hidden");
       }
 
-      function goToMainMenu() {
-        window.location.href = 'main-menu.html';
+      function showSettingsFromPause() {
+        showSettings();
       }
 
-      function goToMapSelection() {
-        window.location.href = 'map-selection.html';
-      }
+      // Initialize main menu on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        // Show main menu by default
+        document.getElementById("mainMenu").classList.remove("hidden");
+        document.getElementById("gameContainer").classList.add("hidden");
 
-      function restartGame() {
-        if (game) {
-          game.resetLevel();
-          game.gameState = "playing";
-        }
-        document.getElementById('gameOverScreen').classList.add('hidden');
-      }
+        // Add pause menu event listeners
+        document
+          .getElementById("pauseBtn")
+          .addEventListener("click", showPauseMenu);
+        document
+          .getElementById("resumeBtn")
+          .addEventListener("click", resumeGame);
+        document
+          .getElementById("restartPauseBtn")
+          .addEventListener("click", restartFromPause);
+        document
+          .getElementById("mainMenuBtn")
+          .addEventListener("click", goToMainMenuFromPause);
+        document
+          .getElementById("settingsPauseBtn")
+          .addEventListener("click", showSettingsFromPause);
 
-      // Event listeners
-      document.addEventListener('DOMContentLoaded', function() {
-        // Initialize game
-        game = new Level2Game();
-        
-        // Button event listeners
-        document.getElementById('startBtn').addEventListener('click', startGame);
-        document.getElementById('pauseBtn').addEventListener('click', pauseGame);
-        document.getElementById('resetBtn').addEventListener('click', resetLevel);
-        document.getElementById('backToMapBtn').addEventListener('click', goToMapSelection);
-        
-        // Pause menu buttons
-        document.getElementById('resumeBtn').addEventListener('click', resumeGame);
-        document.getElementById('restartPauseBtn').addEventListener('click', resetLevel);
-        document.getElementById('mainMenuBtn').addEventListener('click', goToMainMenu);
-        document.getElementById('mapSelectionBtn').addEventListener('click', goToMapSelection);
-        
-        // Game over buttons
-        document.getElementById('restartBtn').addEventListener('click', restartGame);
-        document.getElementById('backToMapBtn2').addEventListener('click', goToMapSelection);
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(event) {
-          if (event.key === 'Escape') {
-            if (document.getElementById('pauseMenu').classList.contains('hidden')) {
-              pauseGame();
+        // Add keyboard shortcut for pause (Escape key)
+        document.addEventListener("keydown", function (event) {
+          if (
+            event.key === "Escape" &&
+            !document
+              .getElementById("mainMenu")
+              .classList.contains("hidden") === false
+          ) {
+            if (
+              document.getElementById("pauseMenu").classList.contains("hidden")
+            ) {
+              showPauseMenu();
             } else {
-              resumeGame();
+              hidePauseMenu();
             }
           }
         });
