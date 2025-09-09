@@ -3,19 +3,340 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fireboy vs Watergirl - Level 3: Ice Cavern Challenge</title>
+    <title>Fireboy vs Watergirl - Level 3: Battle Arena</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-      /* Level 3 Specific Styles */
-      @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
-      
-      body {
-        font-family: 'MedievalSharp', cursive;
+      /* Main Menu Styles */
+      @import url("https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap");
+
+      .screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .screen.hidden {
+        display: none;
+      }
+
+      #mainMenu {
+        font-family: "MedievalSharp", cursive;
         background: #0a0a0a;
         color: #d4af37;
-        margin: 0;
-        padding: 0;
         overflow: hidden;
+        position: relative;
+      }
+
+      /* Animated dungeon background */
+      .dungeon-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+          repeating-linear-gradient(
+            90deg,
+            #1a1a1a 0px,
+            #2a2a2a 20px,
+            #1a1a1a 40px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            #1a1a1a 0px,
+            #2a2a2a 20px,
+            #1a1a1a 40px
+          );
+        animation: dungeonPulse 10s ease-in-out infinite;
+      }
+
+      @keyframes dungeonPulse {
+        0%,
+        100% {
+          filter: brightness(0.8);
+        }
+        50% {
+          filter: brightness(1.2);
+        }
+      }
+
+      /* Torch effects */
+      .torch {
+        position: absolute;
+        width: 60px;
+        height: 120px;
+      }
+
+      .torch-left {
+        top: 20%;
+        left: 5%;
+      }
+
+      .torch-right {
+        top: 20%;
+        right: 5%;
+      }
+
+      .flame {
+        width: 40px;
+        height: 60px;
+        margin: 0 auto;
+        background: radial-gradient(
+          ellipse at bottom,
+          #ff6b35,
+          #ff8c42,
+          transparent
+        );
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        animation: flicker 1.5s ease-in-out infinite;
+        filter: blur(2px);
+        box-shadow: 0 0 40px #ff6b35, 0 0 80px #ff8c42;
+      }
+
+      @keyframes flicker {
+        0%,
+        100% {
+          transform: scale(1) rotate(-2deg);
+          opacity: 0.8;
+        }
+        25% {
+          transform: scale(1.1) rotate(1deg);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(0.9) rotate(-1deg);
+          opacity: 0.9;
+        }
+        75% {
+          transform: scale(1.05) rotate(0.5deg);
+          opacity: 0.95;
+        }
+      }
+
+      .torch-holder {
+        width: 20px;
+        height: 40px;
+        background: linear-gradient(135deg, #8b4513, #654321);
+        margin: 0 auto;
+        border-radius: 0 0 10px 10px;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Main container */
+      .main-container {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        text-align: center;
+      }
+
+      .game-title {
+        margin-bottom: 60px;
+        animation: titleGlow 3s ease-in-out infinite;
+      }
+
+      @keyframes titleGlow {
+        0%,
+        100% {
+          text-shadow: 0 0 20px #d4af37, 0 0 40px #d4af37;
+        }
+        50% {
+          text-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700, 0 0 80px #ffd700;
+        }
+      }
+
+      .title-main {
+        font-size: 4.5em;
+        margin: 0;
+        color: #d4af37;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        letter-spacing: 3px;
+        animation: titlePulse 2s ease-in-out infinite;
+      }
+
+      @keyframes titlePulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .title-sub {
+        font-size: 1.8em;
+        margin: 10px 0 0 0;
+        color: #8b7355;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        letter-spacing: 2px;
+      }
+
+      .menu-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      .menu-btn {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 3px solid #d4af37;
+        color: #d4af37;
+        padding: 15px 40px;
+        font-size: 1.4em;
+        font-family: "MedievalSharp", cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        position: relative;
+        overflow: hidden;
+        min-width: 280px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      }
+
+      .menu-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(212, 175, 55, 0.3),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .menu-btn:hover::before {
+        left: 100%;
+      }
+
+      .menu-btn:hover {
+        background: linear-gradient(135deg, #4a2818, #6a3828);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+      }
+
+      .menu-btn:active {
+        transform: translateY(-1px);
+      }
+
+      .bottom-buttons {
+        display: flex;
+        gap: 20px;
+      }
+
+      .small-btn {
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        border: 2px solid #8b7355;
+        color: #8b7355;
+        padding: 8px 20px;
+        font-size: 1em;
+        font-family: "MedievalSharp", cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .small-btn:hover {
+        background: linear-gradient(135deg, #2a1810, #3a2420);
+        color: #d4af37;
+        border-color: #d4af37;
+        transform: translateY(-2px);
+      }
+
+      /* Character animations */
+      .characters {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 200px;
+        z-index: 5;
+      }
+
+      .character {
+        position: absolute;
+        width: 80px;
+        height: 120px;
+        bottom: 0;
+        animation: characterFloat 4s ease-in-out infinite;
+      }
+
+      .fireboy {
+        left: 15%;
+        background: linear-gradient(135deg, #ff6b35, #ff8c42);
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+      }
+
+      .watergirl {
+        right: 15%;
+        background: linear-gradient(135deg, #4a90e2, #87ceeb);
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        box-shadow: 0 0 30px rgba(74, 144, 226, 0.5);
+      }
+
+      @keyframes characterFloat {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+
+      /* Floating particles */
+      .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: #d4af37;
+        border-radius: 50%;
+        animation: floatUp 6s linear infinite;
+        opacity: 0.7;
+      }
+
+      @keyframes floatUp {
+        0% {
+          transform: translateY(100vh) rotate(0deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 0.7;
+        }
+        90% {
+          opacity: 0.7;
+        }
+        100% {
+          transform: translateY(-100px) rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      /* Game Screen Styles */
+      #gameContainer {
+        background: #0a0a0a;
+        color: #d4af37;
+        font-family: "MedievalSharp", cursive;
       }
 
       #gameHeader {
@@ -47,7 +368,7 @@
         background: rgba(0, 0, 0, 0.3);
         padding: 8px 15px;
         border-radius: 5px;
-        border: 1px solid #8B7355;
+        border: 1px solid #8b7355;
       }
 
       #scoreInfo {
@@ -75,39 +396,23 @@
 
       #gameCanvas {
         display: block;
-        background: 
-          linear-gradient(135deg, #B0E0E6 0%, #87CEEB 25%, #4682B4 50%, #2F4F4F 100%),
-          radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+        background: url('assets/lvl3bg.png') no-repeat center center;
+        background-size: cover;
         border: 2px solid #d4af37;
         box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
-        /* Ice cavern canvas size */
         width: 1000px;
         height: 600px;
         position: relative;
-      }
-      
-      #gameCanvas::before {
-        content: '';
-        position: absolute;
-        top: 0;
+        margin: 0;
+        top: 50%;
         left: 0;
-        right: 0;
-        bottom: 0;
-        background: 
-          repeating-linear-gradient(
-            45deg,
-            transparent 0px,
-            rgba(255, 255, 255, 0.1) 1px,
-            transparent 2px,
-            transparent 10px
-          );
-        pointer-events: none;
+        transform: translateY(-50%);
       }
 
       #gameUI {
         position: absolute;
         top: 20px;
-        left: 20px;
+        right: 20px;
         background: rgba(0, 0, 0, 0.8);
         border: 2px solid #d4af37;
         border-radius: 10px;
@@ -116,15 +421,55 @@
         font-size: 0.9em;
       }
 
+      #controlsHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
       #gameUI h3 {
         color: #d4af37;
-        margin: 0 0 10px 0;
+        margin: 0;
         font-size: 1.2em;
+      }
+
+      .toggle-btn {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+
+      .toggle-btn:hover {
+        background: linear-gradient(135deg, #4a2818, #6a3828);
+        transform: scale(1.1);
+      }
+
+      .controls-content {
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .controls-content.hidden {
+        max-height: 0;
+        opacity: 0;
+        margin: 0;
+        padding: 0;
       }
 
       #gameUI p {
         margin: 5px 0;
-        color: #8B7355;
+        color: #8b7355;
         line-height: 1.4;
       }
 
@@ -137,6 +482,69 @@
         font-weight: bold;
       }
 
+      .player-controls {
+        margin: 15px 0;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+        border: 1px solid #8b7355;
+      }
+
+      .player-title {
+        margin: 0 0 10px 0;
+        font-size: 1.1em;
+      }
+
+      .fireboy-title {
+        color: #ff6b35;
+      }
+
+      .watergirl-title {
+        color: #4a90e2;
+      }
+
+      .control-group {
+        margin: 8px 0;
+      }
+
+      .control-label {
+        font-size: 0.9em;
+        color: #8b7355;
+        margin-bottom: 5px;
+      }
+
+      .keyboard-keys {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .key-row {
+        display: flex;
+        justify-content: center;
+        gap: 3px;
+      }
+
+      .key {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 1px solid #d4af37;
+        color: #d4af37;
+        padding: 4px 8px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        min-width: 25px;
+        text-align: center;
+        font-family: "MedievalSharp", cursive;
+      }
+
+      .game-info {
+        margin-top: 15px;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+        border: 1px solid #8b7355;
+      }
+
       #gameControls {
         position: absolute;
         bottom: 20px;
@@ -147,13 +555,18 @@
         z-index: 100;
       }
 
+      /* Hide game controls on main menu */
+      #mainMenu #gameControls {
+        display: none;
+      }
+
       #gameControls button {
         background: linear-gradient(135deg, #2c1810, #4a2818);
         border: 2px solid #d4af37;
         color: #d4af37;
         padding: 10px 20px;
         font-size: 1em;
-        font-family: 'MedievalSharp', cursive;
+        font-family: "MedievalSharp", cursive;
         cursor: pointer;
         transition: all 0.3s ease;
         border-radius: 5px;
@@ -182,7 +595,7 @@
         align-items: center;
         justify-content: center;
         z-index: 1000;
-        font-family: 'MedievalSharp', cursive;
+        font-family: "MedievalSharp", cursive;
       }
 
       #gameOverContent {
@@ -191,9 +604,8 @@
         border-radius: 15px;
         padding: 40px;
         text-align: center;
-        box-shadow: 
-          inset 0 0 30px rgba(0,0,0,0.5),
-          0 10px 30px rgba(0,0,0,0.8);
+        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5),
+          0 10px 30px rgba(0, 0, 0, 0.8);
       }
 
       #gameOverTitle {
@@ -204,7 +616,7 @@
       }
 
       #gameOverMessage {
-        color: #8B7355;
+        color: #8b7355;
         font-size: 1.3em;
         margin-bottom: 30px;
       }
@@ -215,7 +627,7 @@
         color: #d4af37;
         padding: 12px 25px;
         font-size: 1.1em;
-        font-family: 'MedievalSharp', cursive;
+        font-family: "MedievalSharp", cursive;
         cursor: pointer;
         transition: all 0.3s ease;
         text-transform: uppercase;
@@ -227,6 +639,38 @@
         background: linear-gradient(135deg, #2a1810, #3a2420);
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+      }
+
+      .game-over-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 250px;
+        margin: 0 auto;
+      }
+
+      .game-over-buttons button {
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        padding: 12px 25px;
+        font-size: 1.1em;
+        font-family: "MedievalSharp", cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 5px;
+      }
+
+      .game-over-buttons button:hover {
+        background: linear-gradient(135deg, #2a1810, #3a2420);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+      }
+
+      .game-over-buttons button:active {
+        transform: translateY(0);
       }
 
       .hidden {
@@ -245,7 +689,7 @@
         align-items: center;
         justify-content: center;
         z-index: 1000;
-        font-family: 'MedievalSharp', cursive;
+        font-family: "MedievalSharp", cursive;
       }
 
       #pauseContent {
@@ -254,9 +698,8 @@
         border-radius: 15px;
         padding: 40px;
         text-align: center;
-        box-shadow: 
-          inset 0 0 30px rgba(0,0,0,0.5),
-          0 10px 30px rgba(0,0,0,0.8);
+        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5),
+          0 10px 30px rgba(0, 0, 0, 0.8);
         animation: pauseSlideIn 0.3s ease-out;
       }
 
@@ -292,7 +735,7 @@
         color: #d4af37;
         padding: 12px 25px;
         font-size: 1.1em;
-        font-family: 'MedievalSharp', cursive;
+        font-family: "MedievalSharp", cursive;
         cursor: pointer;
         transition: all 0.3s ease;
         text-transform: uppercase;
@@ -303,13 +746,18 @@
       }
 
       .pause-btn::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(212, 175, 55, 0.2),
+          transparent
+        );
         transition: left 0.5s ease;
       }
 
@@ -320,9 +768,8 @@
       .pause-btn:hover {
         background: linear-gradient(135deg, #2a1810, #3a2420);
         transform: translateY(-2px);
-        box-shadow: 
-          inset 0 0 20px rgba(212, 175, 55, 0.1),
-          0 5px 15px rgba(0,0,0,0.6);
+        box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.1),
+          0 5px 15px rgba(0, 0, 0, 0.6);
         text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
       }
 
@@ -330,114 +777,301 @@
         transform: translateY(0);
       }
 
-      /* Level 3 specific indicators */
-      .level-indicator {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        border: 2px solid #d4af37;
-        border-radius: 10px;
-        padding: 10px 15px;
+      /* Victory Overlay Styles */
+      .victory-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        font-family: "MedievalSharp", cursive;
+      }
+
+      .victory-content {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 3px solid #d4af37;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5),
+          0 10px 30px rgba(0, 0, 0, 0.8);
+        animation: victorySlideIn 0.5s ease-out;
+      }
+
+      @keyframes victorySlideIn {
+        from {
+          opacity: 0;
+          transform: scale(0.8) translateY(-50px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .victory-content h2 {
         color: #d4af37;
-        font-size: 1.1em;
-        font-weight: bold;
-      }
-
-      .ice-cavern-mode {
-        color: #87CEEB;
-        text-shadow: 0 0 10px rgba(135, 206, 235, 0.5);
-      }
-
-      /* Ice trap warning indicator */
-      .ice-warning {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(255, 0, 0, 0.8);
-        border: 2px solid #ff0000;
-        border-radius: 10px;
-        padding: 10px 20px;
-        color: #fff;
-        font-size: 1.2em;
-        font-weight: bold;
+        font-size: 3em;
+        margin-bottom: 30px;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-        animation: iceWarningPulse 1s ease-in-out infinite;
-        z-index: 100;
+        letter-spacing: 3px;
+        animation: victoryGlow 2s ease-in-out infinite;
       }
 
-      @keyframes iceWarningPulse {
-        0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-        50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+      .victory-message {
+        margin-bottom: 30px;
+        max-width: 600px;
+        text-align: center;
+      }
+
+      .victory-message p {
+        color: #8b7355;
+        font-size: 1.1em;
+        line-height: 1.6;
+        margin: 15px 0;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+      }
+
+      .victory-message p:first-child {
+        color: #d4af37;
+        font-weight: bold;
+      }
+
+      @keyframes victoryGlow {
+        0%, 100% {
+          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 20px #d4af37;
+        }
+        50% {
+          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 40px #ffd700, 0 0 60px #ffd700;
+        }
+      }
+
+      .victory-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 300px;
+        align-items: center;
+        margin: 0 auto;
+      }
+
+      .victory-buttons .menu-btn {
+        min-width: 250px;
+        font-size: 1.2em;
+        padding: 15px 30px;
       }
     </style>
   </head>
   <body>
-    <div id="gameHeader">
-      <h1>❄️ vs 🔥 Level 3: Ice Cavern Challenge</h1>
-      <div id="gameInfo">
-        <div id="levelInfo">Level: <span id="currentLevel">3</span></div>
-        <div id="modeInfo">
-          Mode: <span id="currentMode" class="ice-cavern-mode">Ice Cavern</span>
+    <!-- Main Menu Screen -->
+    <div id="mainMenu" class="screen">
+      <div class="dungeon-bg"></div>
+
+      <!-- Torches -->
+      <div class="torch torch-left">
+        <div class="flame"></div>
+        <div class="torch-holder"></div>
+      </div>
+      <div class="torch torch-right">
+        <div class="flame"></div>
+        <div class="torch-holder"></div>
+      </div>
+
+      <div class="main-container">
+        <div class="game-title">
+          <h1 class="title-main">FIREBOY vs WATERGIRL</h1>
+          <p class="title-sub">LEVEL 3 - FINAL BATTLE</p>
         </div>
-        <div id="scoreInfo">
-          <span id="fireboyScore">Fireboy: 0</span>
-          <span id="watergirlScore">Watergirl: 0</span>
+
+        <div class="menu-buttons">
+          <button class="menu-btn" onclick="startGame()">
+            Start Level 3
+          </button>
+          <button class="menu-btn" onclick="selectMap()">Select Map</button>
+
+          <button class="menu-btn" onclick="showInstructions()">
+            How to Play
+          </button>
+          <button class="menu-btn" onclick="showLeaderboard()">
+            Leaderboard
+          </button>
+        </div>
+
+        <div class="bottom-buttons">
+          <button class="small-btn" onclick="showSettings()">Settings</button>
+          <button class="small-btn" onclick="showCredits()">Credits</button>
         </div>
       </div>
-    </div>
 
-    <div id="gameArea">
-      <div class="level-indicator">
-        🧊 ICE CAVERN CHALLENGE
-      </div>
-      
-      <canvas id="gameCanvas" width="1400" height="800"></canvas>
-      
-      <div id="gameUI">
-        <h3>Level 3: Ice Cavern Challenge</h3>
-        <p>
-          <strong>Objective:</strong> <span id="objectiveText">Reach the door at the top right!</span>
-        </p>
-        <p>
-          <strong>Special Features:</strong>
-        </p>
-        <p>• Large scale level with bigger challenges</p>
-        <p>• Movable blocks - both players must push together</p>
-        <p>• Falling ice traps - watch your step!</p>
-        <p>• Door located at top right corner</p>
-        <p>• Respawn points below the door area</p>
-        <p>• Work together to survive the ice cavern!</p>
+      <div class="characters">
+        <div class="character fireboy"></div>
+        <div class="character watergirl"></div>
       </div>
     </div>
 
-    <div id="gameControls">
-      <button id="startBtn">Start Adventure</button>
-      <button id="pauseBtn">Pause</button>
-      <button id="resetBtn">Reset Level</button>
-      <button id="backToMapBtn">Back to Map</button>
-    </div>
+    <!-- Game Screen -->
+    <div id="gameContainer" class="screen hidden">
+      <div id="gameHeader">
+        <h1>Fireboy vs Watergirl - Level 3</h1>
+        <div id="gameInfo">
+          <div id="levelInfo">Level: <span id="currentLevel">3</span></div>
+          <div id="modeInfo">
+            Mode: <span id="currentMode">Boss Battle</span>
+          </div>
+          <div id="scoreInfo">
+            <span id="fireboyScore">Fireboy: 0</span>
+            <span id="watergirlScore">Watergirl: 0</span>
+          </div>
+        </div>
+      </div>
 
-    <div id="gameOverScreen" class="hidden">
-      <div id="gameOverContent">
-        <h2 id="gameOverTitle">Adventure Complete!</h2>
-        <p id="gameOverMessage">Fireboy Wins!</p>
-        <button id="restartBtn">Adventure Again</button>
+      <div id="gameArea">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <div id="gameUI">
+          <div id="controlsHeader">
+            <h3>Controls:</h3>
+            <button id="toggleControls" class="toggle-btn">−</button>
+          </div>
+          <div id="instructions" class="controls-content">
+
+            <!-- Fireboy Controls -->
+            <div class="player-controls">
+              <h4 class="player-title fireboy-title">🔥 Fireboy</h4>
+              <div class="control-group">
+                <div class="control-label">Movement</div>
+                <div class="keyboard-keys">
+                  <div class="key-row">
+                    <div class="key key-w">W</div>
+                  </div>
+                  <div class="key-row">
+                    <div class="key key-a">A</div>
+                    <div class="key key-s">S</div>
+                    <div class="key key-d">D</div>
+                  </div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Attack</div>
+                <div class="keyboard-keys">
+                  <div class="key key-space">Space</div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Defense</div>
+                <div class="keyboard-keys">
+                  <div class="key key-q">Q</div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Ultimate</div>
+                <div class="keyboard-keys">
+                  <div class="key key-e">E</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Watergirl Controls -->
+            <div class="player-controls">
+              <h4 class="player-title watergirl-title">💧 Watergirl</h4>
+              <div class="control-group">
+                <div class="control-label">Movement</div>
+                <div class="keyboard-keys">
+                  <div class="key-row">
+                    <div class="key key-up">↑</div>
+                  </div>
+                  <div class="key-row">
+                    <div class="key key-left">←</div>
+                    <div class="key key-down">↓</div>
+                    <div class="key key-right">→</div>
+                  </div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Attack</div>
+                <div class="keyboard-keys">
+                  <div class="key key-enter">Enter</div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Defense</div>
+                <div class="keyboard-keys">
+                  <div class="key key-p">P</div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Ultimate</div>
+                <div class="keyboard-keys">
+                  <div class="key key-o">O</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="game-info">
+              <p>
+                <strong>Defense:</strong> Press Q/P to create a thin barrier
+                that blocks projectiles for 3 seconds. 7s cooldown!
+              </p>
+              <p>
+                <strong>Objective:</strong>
+                <span id="objectiveText">Work together to defeat the boss!</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div id="gameControls">
+        <button id="startBtn">Start Game</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn">Reset Level</button>
         <button id="nextLevelBtn" style="display: none">Next Level</button>
-        <button id="backToMapBtn2">Back to Map</button>
       </div>
-    </div>
 
-    <!-- Pause Menu -->
-    <div id="pauseMenu" class="hidden">
-      <div id="pauseContent">
-        <h2>Adventure Paused</h2>
-        <div class="pause-buttons">
-          <button id="resumeBtn" class="pause-btn">Resume Adventure</button>
-          <button id="restartPauseBtn" class="pause-btn">Restart Level</button>
-          <button id="mainMenuBtn" class="pause-btn">Main Menu</button>
-          <button id="mapSelectionBtn" class="pause-btn">Map Selection</button>
+      <div id="gameOverScreen" class="hidden">
+        <div id="gameOverContent">
+          <h2 id="gameOverTitle">Game Over</h2>
+          <p id="gameOverMessage">Fireboy Wins!</p>
+          <div class="game-over-buttons">
+            <button id="restartBtn">Restart Level</button>
+            <button id="mainMenuFromGameOverBtn">Main Menu</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Victory Overlay -->
+      <div id="victoryOverlay" class="victory-overlay hidden">
+        <div class="victory-content">
+          <h2 id="victoryWinner">VICTORY!</h2>
+          <div id="victoryMessage" class="victory-message">
+            <p>From bitter rivals to trusted allies, Fireboy and Watergirl have learned that true strength comes from unity. Together, they have defeated the mighty boss and proven that cooperation triumphs over conflict.</p>
+            <p>Their journey from enemies to friends shows that even the greatest differences can be overcome when we work together toward a common goal.</p>
+          </div>
+          <div class="victory-buttons">
+            <button id="returnToMainMenuFromVictoryBtn" class="menu-btn">
+              Main Menu
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pause Menu -->
+      <div id="pauseMenu" class="hidden">
+        <div id="pauseContent">
+          <h2>Game Paused</h2>
+          <div class="pause-buttons">
+            <button id="resumeBtn" class="pause-btn">Resume Game</button>
+            <button id="restartPauseBtn" class="pause-btn">
+              Restart Level
+            </button>
+            <button id="mainMenuBtn" class="pause-btn">Main Menu</button>
+            <button id="settingsPauseBtn" class="pause-btn">Settings</button>
+          </div>
         </div>
       </div>
     </div>
@@ -445,1015 +1079,209 @@
     <script src="settings.js"></script>
     <script src="pointSystem.js"></script>
     <script src="game.js"></script>
-    
+
     <script>
-      // Level 3 specific game initialization
-      class Level3Game extends Game {
-        constructor() {
-          super();
-          this.currentLevel = 3;
-          this.gameMode = "cooperative";
-          this.width = 1000;
-          this.height = 600;
-          
-          // Level 3 specific settings
-          this.projectileSpeed = 6; // Slightly slower for larger level
-          this.defenseCooldownTime = 10000; // 10 seconds
-          this.powerUpSpawnRate = 15000; // Every 15 seconds
-          this.enemyAggression = 1.2; // Moderate AI
-          
-          // Level 3 specific features
-          this.movableBlocks = [];
-          this.iceTraps = [];
-          this.iceTrapTriggers = [];
-          this.respawnPoints = [];
-          this.doorLocation = { x: 920, y: 80 }; // Top right corner
-          
-          // Initialize canvas with larger size
-          this.canvas.width = this.width;
-          this.canvas.height = this.height;
-          
-          // Ice background
-          this.iceBackground = new Image();
-          this.iceBackground.src = 'assets/Ice.png';
-          this.iceBackground.onload = () => {
-            console.log('Ice background loaded successfully');
-          };
-          this.iceBackground.onerror = () => {
-            console.log('Failed to load ice background, using fallback');
-          };
-        }
+      // Main Menu Functions
+      function createParticle() {
+        const particle = document.createElement("div");
+        particle.className = "particle";
+        particle.style.left = Math.random() * window.innerWidth + "px";
+        particle.style.animationDelay = Math.random() * 4 + "s";
+        particle.style.animationDuration = 4 + Math.random() * 2 + "s";
+        document.body.appendChild(particle);
 
-        createLevel(levelNumber) {
-          super.createLevel(levelNumber);
-          
-          // Level 3 specific setup
-          this.setupIceCavernLevel();
-        }
-
-        setupIceCavernLevel() {
-          // Create three-story ice cavern layout
-          this.platforms = [
-            // Ground floor (Story 1)
-            { x: 0, y: 580, width: 1000, height: 20, type: 'ice' },
-            
-            // First story platforms
-            { x: 100, y: 520, width: 150, height: 20, type: 'ice' },
-            { x: 280, y: 480, width: 150, height: 20, type: 'ice' },
-            { x: 460, y: 520, width: 150, height: 20, type: 'ice' },
-            { x: 640, y: 480, width: 150, height: 20, type: 'ice' },
-            { x: 820, y: 520, width: 150, height: 20, type: 'ice' },
-            
-            // Second story floor
-            { x: 0, y: 380, width: 300, height: 20, type: 'ice' },
-            { x: 400, y: 380, width: 600, height: 20, type: 'ice' },
-            
-            // Second story platforms
-            { x: 150, y: 320, width: 150, height: 20, type: 'ice' },
-            { x: 350, y: 290, width: 150, height: 20, type: 'ice' },
-            { x: 550, y: 320, width: 150, height: 20, type: 'ice' },
-            { x: 750, y: 290, width: 150, height: 20, type: 'ice' },
-            
-            // Third story floor
-            { x: 0, y: 180, width: 400, height: 20, type: 'ice' },
-            { x: 500, y: 180, width: 500, height: 20, type: 'ice' },
-            
-            // Third story platforms leading to door
-            { x: 750, y: 120, width: 250, height: 20, type: 'door' }
-          ];
-
-          // Create movable ice blocks (require both players to push)
-          this.movableBlocks = [
-            { x: 300, y: 540, width: 40, height: 40, type: 'movable', 
-              originalX: 300, originalY: 540, beingPushed: false, 
-              pushDirection: 0, pushSpeed: 50, requiredPlayers: 2 },
-            { x: 200, y: 340, width: 40, height: 40, type: 'movable',
-              originalX: 200, originalY: 340, beingPushed: false,
-              pushDirection: 0, pushSpeed: 50, requiredPlayers: 2 },
-            { x: 600, y: 340, width: 40, height: 40, type: 'movable',
-              originalX: 600, originalY: 340, beingPushed: false,
-              pushDirection: 0, pushSpeed: 50, requiredPlayers: 2 },
-            { x: 450, y: 140, width: 40, height: 40, type: 'movable',
-              originalX: 450, originalY: 140, beingPushed: false,
-              pushDirection: 0, pushSpeed: 50, requiredPlayers: 2 }
-          ];
-
-          // Create ice traps
-          this.iceTraps = [
-            { x: 250, y: 100, width: 80, height: 20, type: 'ice', 
-              triggered: false, falling: false, fallSpeed: 200 },
-            { x: 550, y: 200, width: 80, height: 20, type: 'ice',
-              triggered: false, falling: false, fallSpeed: 200 },
-            { x: 850, y: 300, width: 80, height: 20, type: 'ice',
-              triggered: false, falling: false, fallSpeed: 200 }
-          ];
-
-          // Create ice trap triggers (pressure plates)
-          this.iceTrapTriggers = [
-            { x: 250, y: 650, width: 40, height: 20, type: 'trigger', 
-              trapIndex: 0, activated: false },
-            { x: 550, y: 550, width: 40, height: 20, type: 'trigger',
-              trapIndex: 1, activated: false },
-            { x: 850, y: 450, width: 40, height: 20, type: 'trigger',
-              trapIndex: 2, activated: false }
-          ];
-
-          // Create respawn points below door area
-          this.respawnPoints = [
-            { x: 100, y: 700, type: 'respawn' },
-            { x: 800, y: 700, type: 'respawn' }
-          ];
-
-          // Spawn initial power-ups
-          this.spawnPowerUp();
-          
-          // Update UI for ice cavern mode
-          document.getElementById('objectiveText').textContent = 'Reach the door at the top right!';
-        }
-
-        update(deltaTime) {
-          super.update(deltaTime);
-          
-          // Level 3 specific updates
-          this.updateMovableBlocks(deltaTime);
-          this.updateIceTraps(deltaTime);
-          this.updateIceTrapTriggers(deltaTime);
-        }
-
-        updateMovableBlocks(deltaTime) {
-          this.movableBlocks.forEach(block => {
-            if (block.beingPushed && block.pushDirection !== 0) {
-              // Move the block
-              block.x += block.pushDirection * block.pushSpeed * deltaTime;
-              
-              // Keep block within bounds
-              block.x = Math.max(0, Math.min(block.x, this.width - block.width));
-              
-              // Check if block hits a platform or another block
-              this.checkBlockCollisions(block);
-            }
-          });
-        }
-
-        updateIceTraps(deltaTime) {
-          this.iceTraps.forEach(trap => {
-            if (trap.triggered && !trap.falling) {
-              // Start falling after a short delay
-              setTimeout(() => {
-                trap.falling = true;
-              }, 1000);
-            }
-            
-            if (trap.falling) {
-              trap.y += trap.fallSpeed * deltaTime;
-              
-              // Check if trap hits ground or platform
-              if (trap.y >= this.height - 50) {
-                trap.falling = false;
-                trap.triggered = false;
-                trap.y = 100; // Reset position
-              }
-            }
-          });
-        }
-
-        updateIceTrapTriggers(deltaTime) {
-          this.iceTrapTriggers.forEach(trigger => {
-            if (this.fireboy && this.watergirl) {
-              const fireboyOnTrigger = this.checkCollision(this.fireboy, trigger);
-              const watergirlOnTrigger = this.checkCollision(this.watergirl, trigger);
-              
-              if ((fireboyOnTrigger || watergirlOnTrigger) && !trigger.activated) {
-                trigger.activated = true;
-                this.iceTraps[trigger.trapIndex].triggered = true;
-                this.addTextEffect(trigger.x, trigger.y - 20, "ICE TRAP ACTIVATED!", "#ff0000");
-                this.playSound(400, 0.5, "square");
-              }
-            }
-          });
-        }
-
-        checkBlockCollisions(block) {
-          // Check collision with platforms
-          this.platforms.forEach(platform => {
-            if (this.checkCollision(block, platform)) {
-              // Stop the block
-              block.beingPushed = false;
-              block.pushDirection = 0;
-            }
-          });
-          
-          // Check collision with other blocks
-          this.movableBlocks.forEach(otherBlock => {
-            if (otherBlock !== block && this.checkCollision(block, otherBlock)) {
-              block.beingPushed = false;
-              block.pushDirection = 0;
-            }
-          });
-        }
-
-        checkCollision(obj1, obj2) {
-          return (
-            obj1.x < obj2.x + obj2.width &&
-            obj1.x + obj1.width > obj2.x &&
-            obj1.y < obj2.y + obj2.height &&
-            obj1.y + obj1.height > obj2.y
-          );
-        }
-
-        checkMovableBlockCollisions() {
-          if (!this.fireboy || !this.watergirl) return;
-          
-          this.movableBlocks.forEach(block => {
-            const fireboyPushing = this.checkCollision(this.fireboy, block);
-            const watergirlPushing = this.checkCollision(this.watergirl, block);
-            
-            if (fireboyPushing && watergirlPushing) {
-              // Both players are pushing - determine direction
-              const fireboyDirection = this.fireboy.facingRight ? 1 : -1;
-              const watergirlDirection = this.watergirl.facingRight ? 1 : -1;
-              
-              if (fireboyDirection === watergirlDirection) {
-                // Both pushing in same direction
-                block.beingPushed = true;
-                block.pushDirection = fireboyDirection;
-                this.addTextEffect(block.x, block.y - 20, "PUSHING TOGETHER!", "#00ff00");
-              } else {
-                // Pushing in opposite directions - no movement
-                block.beingPushed = false;
-                block.pushDirection = 0;
-              }
-            } else {
-              // Not enough players pushing
-              block.beingPushed = false;
-              block.pushDirection = 0;
-            }
-          });
-        }
-
-        checkWinConditions() {
-          if (!this.fireboy || !this.watergirl) return;
-          
-          // Check if either player reaches the door
-          const doorPlatform = this.platforms.find(p => p.type === 'door');
-          if (doorPlatform) {
-            const fireboyAtDoor = this.checkCollision(this.fireboy, doorPlatform);
-            const watergirlAtDoor = this.checkCollision(this.watergirl, doorPlatform);
-            
-            if (fireboyAtDoor) {
-              this.endGame("Fireboy Reached the Door!", "fireboy");
-            } else if (watergirlAtDoor) {
-              this.endGame("Watergirl Reached the Door!", "watergirl");
-            }
-          }
-        }
-
-        endGame(message, winner) {
-          this.gameState = "gameOver";
-          document.getElementById('gameOverMessage').textContent = message;
-          document.getElementById('gameOverTitle').textContent = "Adventure Complete!";
-          
-          // Show appropriate buttons
-          document.getElementById('restartBtn').style.display = 'inline-block';
-          document.getElementById('nextLevelBtn').style.display = 'none';
-          document.getElementById('backToMapBtn2').style.display = 'inline-block';
-          
-          document.getElementById('gameOverScreen').classList.remove('hidden');
-          
-          // Update points system
-          if (window.updatePoints) {
-            window.updatePoints(winner, 150); // Bonus points for level 3 victory
-          }
-          
-          // Unlock next level
-          if (window.unlockNextLevel) {
-            window.unlockNextLevel(3, 3); // 3 stars for completing level 3
-          }
-        }
-
-        resetLevel() {
-          super.resetLevel();
-          this.setupIceCavernLevel();
-        }
-
-        drawBackground() {
-          // Override the base drawBackground to use ice background
-          if (this.iceBackground.complete && this.iceBackground.naturalWidth > 0) {
-            // Draw the ice background image
-            this.ctx.drawImage(this.iceBackground, 0, 0, this.width, this.height);
-            console.log('Drawing ice background image');
-          } else {
-            // Enhanced ice-themed fallback background
-            console.log('Using ice fallback background');
-            
-            // Create a more detailed ice cavern background
-            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
-            gradient.addColorStop(0, '#B0E0E6'); // Light blue at top
-            gradient.addColorStop(0.3, '#87CEEB'); // Sky blue
-            gradient.addColorStop(0.7, '#4682B4'); // Steel blue
-            gradient.addColorStop(1, '#2F4F4F'); // Dark slate gray at bottom
-            
-            this.ctx.fillStyle = gradient;
-            this.ctx.fillRect(0, 0, this.width, this.height);
-            
-            // Add ice crystal effects
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            for (let i = 0; i < 20; i++) {
-              const x = Math.random() * this.width;
-              const y = Math.random() * this.height;
-              const size = Math.random() * 10 + 5;
-              this.ctx.beginPath();
-              this.ctx.arc(x, y, size, 0, Math.PI * 2);
-              this.ctx.fill();
-            }
-            
-            // Add ice stalactites at the top
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            for (let i = 0; i < 15; i++) {
-              const x = (i * this.width) / 15;
-              const height = Math.random() * 30 + 10;
-              this.ctx.fillRect(x, 0, 3, height);
-            }
-          }
-        }
-
-        render() {
-          super.render();
-          
-          // Level 3 specific rendering
-          this.drawMovableBlocks();
-          this.drawIceTraps();
-          this.drawIceTrapTriggers();
-        }
-
-        drawMovableBlocks() {
-          this.movableBlocks.forEach(block => {
-            // Draw block
-            this.ctx.fillStyle = '#4682B4';
-            this.ctx.fillRect(block.x, block.y, block.width, block.height);
-            
-            // Draw ice texture
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            this.ctx.fillRect(block.x + 5, block.y + 5, block.width - 10, block.height - 10);
-            
-            // Draw push indicator
-            if (block.beingPushed) {
-              this.ctx.fillStyle = '#00ff00';
-              this.ctx.fillRect(block.x - 2, block.y - 2, block.width + 4, 2);
-            }
-          });
-        }
-
-        drawIceTraps() {
-          this.iceTraps.forEach(trap => {
-            if (trap.triggered) {
-              // Draw falling ice
-              this.ctx.fillStyle = '#87CEEB';
-              this.ctx.fillRect(trap.x, trap.y, trap.width, trap.height);
-              
-              // Draw warning effect
-              this.ctx.strokeStyle = '#ff0000';
-              this.ctx.lineWidth = 3;
-              this.ctx.strokeRect(trap.x - 5, trap.y - 5, trap.width + 10, trap.height + 10);
-            }
-          });
-        }
-
-        drawIceTrapTriggers() {
-          this.iceTrapTriggers.forEach(trigger => {
-            // Draw pressure plate
-            this.ctx.fillStyle = trigger.activated ? '#ff0000' : '#ffa500';
-            this.ctx.fillRect(trigger.x, trigger.y, trigger.width, trigger.height);
-            
-            // Draw warning text
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = '12px Arial';
-            this.ctx.fillText('TRAP', trigger.x - 10, trigger.y - 5);
-          });
-        }
-        
+        setTimeout(() => {
+          particle.remove();
+        }, 6000);
       }
 
-      // Initialize the game when the page loads
-      let game;
-      window.addEventListener('load', () => {
-        game = new Level3Game();
-      });
-    </script>
-  </body>
-</html>
-        }
-        
-        activateDefense(character) {
-          character.defenseActive = true;
-          character.defenseCooldown = 420; // 7 seconds at 60fps
-          
-          const wall = {
-            x: character.x - 10,
-            y: character.y - 10,
-            width: character.width + 20,
-            height: character.height + 20,
-            duration: 180, // 3 seconds
-            owner: character.type
-          };
-          
-          this.defenseWalls.push(wall);
-        }
-        
-        useUltimate(character) {
-          character.ultimateReady = false;
-          character.defenseCount = 0;
-          
-          // Create ultimate attack effect
-          for (let i = 0; i < 8; i++) {
-            const angle = (Math.PI * 2 * i) / 8;
-            const projectile = {
-              x: character.x + character.width / 2,
-              y: character.y + character.height / 2,
-              width: 15,
-              height: 15,
-              vx: Math.cos(angle) * 10,
-              vy: Math.sin(angle) * 10,
-              type: character.type === 'fireboy' ? 'fireball' : 'waterball',
-              owner: character.type,
-              ultimate: true
-            };
-            this.projectiles.push(projectile);
-          }
-          
-          this.createEffect(character.x, character.y, 'ultimate');
-        }
-        
-        createEffect(x, y, type) {
-          this.effects.push({
-            x: x,
-            y: y,
-            type: type,
-            frame: 0,
-            maxFrames: 30
-          });
-        }
-        
-        update() {
-          if (this.gameState !== 'playing') return;
-          
-          // Update characters
-          this.updateCharacter(this.fireboy, 'wasd');
-          this.updateCharacter(this.watergirl, 'arrows');
-          
-          // Update movable blocks
-          this.updateMovableBlocks();
-          
-          // Update projectiles
-          this.updateProjectiles();
-          
-          // Update defense walls
-          this.updateDefenseWalls();
-          
-          // Update effects
-          this.updateEffects();
-          
-          // Check collisions
-          this.checkCollisions();
-          
-          // Check win condition
-          this.checkWinCondition();
-        }
+      // Create particles periodically
+      setInterval(createParticle, 300);
 
-        updateCharacter(character, controls) {
-          // Handle input
-          if (controls === 'wasd') {
-            if (this.keys['a']) character.vx = -character.speed;
-            else if (this.keys['d']) character.vx = character.speed;
-            else character.vx *= this.friction;
-            
-            if (this.keys['w'] && this.isOnGround(character)) {
-              character.vy = -character.jumpPower;
-            }
-          } else {
-            if (this.keys['arrowleft']) character.vx = -character.speed;
-            else if (this.keys['arrowright']) character.vx = character.speed;
-            else character.vx *= this.friction;
-            
-            if (this.keys['arrowup'] && this.isOnGround(character)) {
-              character.vy = -character.jumpPower;
-            }
-          }
-          
-          // Apply gravity
-          character.vy += this.gravity;
-          
-          // Update position
-          character.x += character.vx;
-          character.y += character.vy;
-          
-          // Platform collision
-          this.platforms.forEach(platform => {
-            if (this.checkCollision(character, platform)) {
-              // Top collision
-              if (character.vy > 0 && character.y < platform.y) {
-                character.y = platform.y - character.height;
-                character.vy = 0;
-              }
-              // Bottom collision
-              else if (character.vy < 0 && character.y > platform.y) {
-                character.y = platform.y + platform.height;
-                character.vy = 0;
-              }
-              // Side collisions
-              if (character.vx > 0 && character.x < platform.x) {
-                character.x = platform.x - character.width;
-                character.vx = 0;
-              }
-              else if (character.vx < 0 && character.x > platform.x) {
-                character.x = platform.x + platform.width;
-                character.vx = 0;
-              }
-            }
-          });
-          
-          // Movable block collision
-          this.movableBlocks.forEach(block => {
-            if (this.checkCollision(character, block)) {
-              // Check if character is pushing
-              const pushing = (controls === 'wasd' && (this.keys['a'] || this.keys['d'])) ||
-                             (controls === 'arrows' && (this.keys['arrowleft'] || this.keys['arrowright']));
-              
-              if (pushing) {
-                // Add character to pushers if not already there
-                if (!block.beingPushed.includes(character.type)) {
-                  block.beingPushed.push(character.type);
-                }
-              } else {
-                // Remove from pushers
-                block.beingPushed = block.beingPushed.filter(p => p !== character.type);
-              }
-              
-              // Stop character at block
-              if (character.vx > 0 && character.x < block.x) {
-                character.x = block.x - character.width;
-              }
-              else if (character.vx < 0 && character.x > block.x) {
-                character.x = block.x + block.width;
-              }
-            } else {
-              // Remove from pushers if not touching
-              this.movableBlocks.forEach(b => {
-                b.beingPushed = b.beingPushed.filter(p => p !== character.type);
-              });
-            }
-          });
-          
-          // Keep character in bounds
-          character.x = Math.max(0, Math.min(character.x, this.canvas.width - character.width));
-          character.y = Math.max(0, Math.min(character.y, this.canvas.height - character.height));
-          
-          // Update cooldowns
-          if (character.shootCooldown > 0) {
-            character.shootCooldown--;
-            if (character.shootCooldown === 0) {
-              character.canShoot = true;
-            }
-          }
-          
-          if (character.defenseCooldown > 0) {
-            character.defenseCooldown--;
-          }
-          
-          if (character.defenseCount >= 5) {
-            character.ultimateReady = true;
-          }
-        }
-        
-        isOnGround(character) {
-          return this.platforms.some(platform => 
-            character.x < platform.x + platform.width &&
-            character.x + character.width > platform.x &&
-            character.y + character.height >= platform.y &&
-            character.y + character.height <= platform.y + platform.height + 5
-          );
-        }
-        
-        updateMovableBlocks() {
-          this.movableBlocks.forEach(block => {
-            // Check if enough players are pushing
-            if (block.beingPushed.length >= block.pushRequired) {
-              // Determine push direction
-              let pushDirection = 0;
-              if (this.fireboy.x < block.x && block.beingPushed.includes('fireboy') && this.keys['d']) {
-                pushDirection += 1;
-              }
-              if (this.fireboy.x > block.x && block.beingPushed.includes('fireboy') && this.keys['a']) {
-                pushDirection -= 1;
-              }
-              if (this.watergirl.x < block.x && block.beingPushed.includes('watergirl') && this.keys['arrowright']) {
-                pushDirection += 1;
-              }
-              if (this.watergirl.x > block.x && block.beingPushed.includes('watergirl') && this.keys['arrowleft']) {
-                pushDirection -= 1;
-              }
-              
-              // Move block if both pushing same direction
-              if (pushDirection !== 0) {
-                block.vx = pushDirection * 2;
-                
-                // Show visual feedback
-                if (Math.random() < 0.1) {
-                  this.createEffect(block.x + block.width/2, block.y - 10, 'push');
-                }
-              }
-            } else {
-              block.vx *= 0.9; // Friction
-            }
-            
-            // Apply gravity to blocks
-            block.vy += this.gravity;
-            
-            // Update position
-            block.x += block.vx;
-            block.y += block.vy;
-            
-            // Platform collision for blocks
-            this.platforms.forEach(platform => {
-              if (this.checkCollision(block, platform)) {
-                if (block.vy > 0 && block.y < platform.y) {
-                  block.y = platform.y - block.height;
-                  block.vy = 0;
-                }
-              }
-            });
-            
-            // Block-to-block collision
-            this.movableBlocks.forEach(otherBlock => {
-              if (block !== otherBlock && this.checkCollision(block, otherBlock)) {
-                // Simple separation
-                const dx = block.x - otherBlock.x;
-                if (dx > 0) {
-                  block.x = otherBlock.x + otherBlock.width;
-                } else {
-                  block.x = otherBlock.x - block.width;
-                }
-                block.vx = 0;
-              }
-            });
-            
-            // Keep blocks in bounds
-            block.x = Math.max(0, Math.min(block.x, this.canvas.width - block.width));
-          });
-        }
-
-        updateProjectiles() {
-          this.projectiles = this.projectiles.filter(projectile => {
-            projectile.x += projectile.vx;
-            projectile.y += projectile.vy;
-            
-            // Check collision with characters
-            const target = projectile.owner === 'fireboy' ? this.watergirl : this.fireboy;
-            if (target && this.checkCollision(projectile, target)) {
-              // Handle hit
-              target.health -= projectile.ultimate ? 30 : 10;
-              this.createEffect(target.x, target.y, 'hit');
-              
-              // Award defense points
-              if (projectile.owner === 'fireboy') {
-                this.watergirl.defenseCount++;
-              } else {
-                this.fireboy.defenseCount++;
-              }
-              
-              return false; // Remove projectile
-            }
-            
-            // Check collision with defense walls
-            const hitWall = this.defenseWalls.find(wall => 
-              wall.owner !== projectile.owner && this.checkCollision(projectile, wall)
-            );
-            if (hitWall) {
-              this.createEffect(projectile.x, projectile.y, 'block');
-              return false; // Remove projectile
-            }
-            
-            // Remove if off screen
-            return projectile.x > 0 && projectile.x < this.canvas.width &&
-                   projectile.y > 0 && projectile.y < this.canvas.height;
-          });
-        }
-        
-        updateDefenseWalls() {
-          this.defenseWalls = this.defenseWalls.filter(wall => {
-            wall.duration--;
-            return wall.duration > 0;
-          });
-        }
-        
-        updateEffects() {
-          this.effects = this.effects.filter(effect => {
-            effect.frame++;
-            return effect.frame < effect.maxFrames;
-          });
-        }
-        
-        checkCollisions() {
-          // Check power-up collisions
-          this.powerUps = this.powerUps.filter(powerUp => {
-            if (this.checkCollision(this.fireboy, powerUp)) {
-              this.applyPowerUp(this.fireboy, powerUp);
-              this.createEffect(powerUp.x, powerUp.y, 'powerup');
-              return false;
-            }
-            if (this.checkCollision(this.watergirl, powerUp)) {
-              this.applyPowerUp(this.watergirl, powerUp);
-              this.createEffect(powerUp.x, powerUp.y, 'powerup');
-              return false;
-            }
-            return true;
-          });
-        }
-        
-        applyPowerUp(character, powerUp) {
-          switch (powerUp.type) {
-            case 'health':
-              character.health = Math.min(character.maxHealth, character.health + 25);
-              break;
-            case 'speed':
-              character.speed = Math.min(8, character.speed + 1);
-              break;
-            case 'power':
-              character.shootCooldown = Math.max(10, character.shootCooldown - 5);
-              break;
-          }
-        }
-        
-        checkCollision(obj1, obj2) {
-          return obj1.x < obj2.x + obj2.width &&
-                 obj1.x + obj1.width > obj2.x &&
-                 obj1.y < obj2.y + obj2.height &&
-                 obj1.y + obj1.height > obj2.y;
-        }
-        
-        checkWinCondition() {
-          if (this.door && !this.door.reached) {
-            if (this.checkCollision(this.fireboy, this.door)) {
-              this.door.reached = 'fireboy';
-              this.endGame('Fireboy Reached the Door!', 'fireboy');
-            } else if (this.checkCollision(this.watergirl, this.door)) {
-              this.door.reached = 'watergirl';
-              this.endGame('Watergirl Reached the Door!', 'watergirl');
-            }
-          }
-        }
-        
-        endGame(message, winner) {
-          this.gameState = 'gameOver';
-          document.getElementById('gameOverMessage').textContent = message;
-          document.getElementById('gameOverScreen').classList.remove('hidden');
-        }
-        
-        gameLoop() {
-          this.update();
-          this.render();
-          requestAnimationFrame(() => this.gameLoop());
-        }
-        
-        render() {
-          // Clear canvas
-          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          
-          // Draw ice background
-          if (this.iceBackground.complete && this.iceBackground.naturalWidth > 0) {
-            // Draw the ice background image
-            this.ctx.drawImage(this.iceBackground, 0, 0, this.canvas.width, this.canvas.height);
-            console.log('Drawing ice background image');
-          } else {
-            // Enhanced ice-themed fallback background
-            console.log('Using ice fallback background');
-            
-            // Create a more detailed ice cavern background
-            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-            gradient.addColorStop(0, '#B0E0E6'); // Light blue at top
-            gradient.addColorStop(0.3, '#87CEEB'); // Sky blue
-            gradient.addColorStop(0.7, '#4682B4'); // Steel blue
-            gradient.addColorStop(1, '#2F4F4F'); // Dark slate gray at bottom
-            
-            this.ctx.fillStyle = gradient;
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            
-            // Add ice crystal effects
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            for (let i = 0; i < 20; i++) {
-              const x = Math.random() * this.canvas.width;
-              const y = Math.random() * this.canvas.height;
-              const size = Math.random() * 10 + 5;
-              this.ctx.beginPath();
-              this.ctx.arc(x, y, size, 0, Math.PI * 2);
-              this.ctx.fill();
-            }
-            
-            // Add ice stalactites at the top
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            for (let i = 0; i < 15; i++) {
-              const x = (i * this.canvas.width) / 15;
-              const height = Math.random() * 30 + 10;
-              this.ctx.fillRect(x, 0, 3, height);
-            }
-          }
-          
-          // Draw platforms
-          this.platforms.forEach(platform => {
-            this.ctx.fillStyle = platform.color;
-            this.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-            
-            // Add ice effect
-            this.ctx.strokeStyle = '#FFFFFF';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
-          });
-          
-          // Draw movable blocks
-          this.movableBlocks.forEach(block => {
-            this.ctx.fillStyle = block.color;
-            this.ctx.fillRect(block.x, block.y, block.width, block.height);
-            
-            // Add push indicator
-            if (block.beingPushed.length >= block.pushRequired) {
-              this.ctx.fillStyle = '#00FF00';
-              this.ctx.fillRect(block.x + 5, block.y + 5, block.width - 10, 5);
-            }
-            
-            this.ctx.strokeStyle = '#FFFFFF';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(block.x, block.y, block.width, block.height);
-          });
-          
-          // Draw door
-          if (this.door) {
-            this.ctx.fillStyle = '#8B4513';
-            this.ctx.fillRect(this.door.x, this.door.y, this.door.width, this.door.height);
-            this.ctx.strokeStyle = '#FFD700';
-            this.ctx.lineWidth = 3;
-            this.ctx.strokeRect(this.door.x, this.door.y, this.door.width, this.door.height);
-            
-            // Door handle
-            this.ctx.fillStyle = '#FFD700';
-            this.ctx.beginPath();
-            this.ctx.arc(this.door.x + 45, this.door.y + 40, 5, 0, Math.PI * 2);
-            this.ctx.fill();
-          }
-          
-          // Draw power-ups
-          this.powerUps.forEach(powerUp => {
-            if (!powerUp.collected) {
-              this.ctx.fillStyle = powerUp.type === 'health' ? '#FF0000' : 
-                                 powerUp.type === 'speed' ? '#00FF00' : '#FFFF00';
-              this.ctx.beginPath();
-              this.ctx.arc(powerUp.x + 10, powerUp.y + 10, 10, 0, Math.PI * 2);
-              this.ctx.fill();
-            }
-          });
-          
-          // Draw projectiles
-          this.projectiles.forEach(projectile => {
-            this.ctx.fillStyle = projectile.type === 'fireball' ? '#FF6B35' : '#4A90E2';
-            this.ctx.beginPath();
-            this.ctx.arc(projectile.x, projectile.y, 5, 0, Math.PI * 2);
-            this.ctx.fill();
-          });
-          
-          // Draw defense walls
-          this.defenseWalls.forEach(wall => {
-            this.ctx.fillStyle = wall.owner === 'fireboy' ? 'rgba(255, 107, 53, 0.5)' : 'rgba(74, 144, 226, 0.5)';
-            this.ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
-          });
-          
-          // Draw characters
-          this.ctx.fillStyle = this.fireboy.color;
-          this.ctx.fillRect(this.fireboy.x, this.fireboy.y, this.fireboy.width, this.fireboy.height);
-          
-          this.ctx.fillStyle = this.watergirl.color;
-          this.ctx.fillRect(this.watergirl.x, this.watergirl.y, this.watergirl.width, this.watergirl.height);
-          
-          // Draw effects
-          this.effects.forEach(effect => {
-            this.ctx.fillStyle = effect.type === 'hit' ? '#FF0000' : 
-                               effect.type === 'powerup' ? '#FFFF00' : '#00FF00';
-            this.ctx.beginPath();
-            this.ctx.arc(effect.x, effect.y, 15 - effect.frame, 0, Math.PI * 2);
-            this.ctx.fill();
-          });
-          
-          // Draw UI
-          this.drawUI();
-        }
-        
-        drawUI() {
-          // Health bars
-          this.ctx.fillStyle = '#333';
-          this.ctx.fillRect(10, 10, 204, 24);
-          this.ctx.fillStyle = '#FF0000';
-          this.ctx.fillRect(12, 12, (this.fireboy.health / this.fireboy.maxHealth) * 200, 20);
-          
-          this.ctx.fillStyle = '#333';
-          this.ctx.fillRect(this.canvas.width - 214, 10, 204, 24);
-          this.ctx.fillStyle = '#4A90E2';
-          this.ctx.fillRect(this.canvas.width - 212, 12, (this.watergirl.health / this.watergirl.maxHealth) * 200, 20);
-          
-          // Defense indicators
-          this.ctx.fillStyle = '#FFFFFF';
-          this.ctx.font = '16px Arial';
-          this.ctx.fillText(`Defense: ${this.fireboy.defenseCount}/5`, 10, 50);
-          this.ctx.fillText(`Defense: ${this.watergirl.defenseCount}/5`, this.canvas.width - 150, 50);
-          
-          // Ultimate indicators
-          if (this.fireboy.ultimateReady) {
-            this.ctx.fillStyle = '#FFD700';
-            this.ctx.fillText('ULTIMATE READY!', 10, 70);
-          }
-          if (this.watergirl.ultimateReady) {
-            this.ctx.fillStyle = '#FFD700';
-            this.ctx.fillText('ULTIMATE READY!', this.canvas.width - 150, 70);
-          }
-        }
-
-      }
-
-      // Initialize Level 3 Game
-      let game = null;
-
-      // Game control functions
+      // Menu functions
       function startGame() {
-        if (!game) {
-          game = new IceCavernGame();
+        // Hide main menu and show game
+        document.getElementById("mainMenu").classList.add("hidden");
+        document.getElementById("gameContainer").classList.remove("hidden");
+
+        // Initialize the game if not already initialized
+        if (!window.game) {
+          window.game = new Game();
         } else {
-          game.resetLevel();
-          game.gameState = "playing";
+          // Reset game state
+          window.game.currentLevel = 3;
+          window.game.fireboyScore = 0;
+          window.game.watergirlScore = 0;
+          window.game.createLevel(window.game.currentLevel);
+          window.game.gameState = "playing";
         }
-        document.getElementById('startBtn').textContent = 'Restart Adventure';
       }
 
-      function pauseGame() {
-        if (game) {
-          game.gameState = "paused";
-          document.getElementById('pauseMenu').classList.remove('hidden');
+      function selectMap() {
+        // Go to map selection
+        window.location.href = "map-selection.html";
+      }
+
+      function showInstructions() {
+        alert(
+          "CONTROLS:\n\nFireboy:\n• WASD to move\n• Space to shoot fireball\n• Shift for Ultimate (after 5 defenses)\n• Q for Defense Barrier (3s duration, 7s cooldown)\n\nWatergirl:\n• Arrow Keys to move\n• Enter to shoot waterball\n• Shift for Ultimate (after 5 defenses)\n• P for Defense Barrier (3s duration, 7s cooldown)\n\nOBJECTIVE:\n• Collect power-ups and defeat enemies\n• Reach the doors before your opponent!\n• Block enemy projectiles to build ultimate power\n• Use defense barriers strategically!\n\nGAME FEATURES:\n• Door System: Doors spawn every 15-30 seconds\n• Defense System: Block projectiles to gain ultimate abilities\n• Ultimate Attacks: Powerful attacks after 5 successful defenses\n• Defense Barriers: Create temporary shields with Q/P keys\n• Point System: Track your progress and compete!"
+        );
+      }
+
+      function showLeaderboard() {
+        // Try to load scores from localStorage
+        try {
+          const savedProgress = localStorage.getItem("fireboyWatergirlPoints");
+          if (savedProgress) {
+            const data = JSON.parse(savedProgress);
+            alert(
+              `LEADERBOARD\n\n🔥 Fireboy\nTotal Points: ${
+                data.fireboyPoints || 0
+              }\nDoor Wins: ${
+                data.doorWins?.fireboy || 0
+              }\n\n💧 Watergirl\nTotal Points: ${
+                data.watergirlPoints || 0
+              }\nDoor Wins: ${data.doorWins?.watergirl || 0}\n\nTotal Rounds: ${
+                data.totalRounds || 0
+              }`
+            );
+          } else {
+            alert("No scores yet! Play some games first!");
+          }
+        } catch (e) {
+          alert("No scores yet! Play some games first!");
+        }
+      }
+
+      function showSettings() {
+        alert(
+          "SETTINGS\n\nSound: ON ✓\nMusic: ON ✓\nParticles: ON ✓\n\n(Settings menu coming soon!)"
+        );
+      }
+
+      function showCredits() {
+        alert(
+          "FIREBOY VS WATERGIRL\nFinal Battle - Level 3\n\nA competitive twist on the classic game!\n\nCreated with:\n• HTML5 Canvas\n• CSS3 Animations\n• Vanilla JavaScript\n• Enhanced Combat System\n• Door & Defense Mechanics\n• Defense Barriers\n\nThank you for playing!"
+        );
+      }
+
+      // Pause Menu Functions
+      function showPauseMenu() {
+        document.getElementById("pauseMenu").classList.remove("hidden");
+        if (window.game) {
+          window.game.gameState = "paused";
+        }
+      }
+
+      function hidePauseMenu() {
+        document.getElementById("pauseMenu").classList.add("hidden");
+        if (window.game) {
+          window.game.gameState = "playing";
         }
       }
 
       function resumeGame() {
-        if (game) {
-          game.gameState = "playing";
-          document.getElementById('pauseMenu').classList.add('hidden');
+        hidePauseMenu();
+      }
+
+      function restartFromPause() {
+        hidePauseMenu();
+        if (window.game) {
+          window.game.resetLevel();
         }
       }
 
-      function resetLevel() {
-        if (game) {
-          game.resetLevel();
+      function goToMainMenuFromPause() {
+        hidePauseMenu();
+        document.getElementById("gameContainer").classList.add("hidden");
+        document.getElementById("mainMenu").classList.remove("hidden");
+      }
+
+      function showSettingsFromPause() {
+        showSettings();
+      }
+
+      // Toggle controls visibility
+      function toggleControls() {
+        const controlsContent = document.getElementById("instructions");
+        const toggleBtn = document.getElementById("toggleControls");
+        
+        if (controlsContent.classList.contains("hidden")) {
+          controlsContent.classList.remove("hidden");
+          toggleBtn.textContent = "−";
+        } else {
+          controlsContent.classList.add("hidden");
+          toggleBtn.textContent = "+";
         }
       }
 
-      function goToMainMenu() {
-        window.location.href = 'main-menu.html';
-      }
+      // Initialize main menu on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        // Show main menu by default
+        document.getElementById("mainMenu").classList.remove("hidden");
+        document.getElementById("gameContainer").classList.add("hidden");
 
-      function goToMapSelection() {
-        window.location.href = 'map-selection.html';
-      }
+        // Add pause menu event listeners
+        document
+          .getElementById("pauseBtn")
+          .addEventListener("click", showPauseMenu);
+        document
+          .getElementById("resumeBtn")
+          .addEventListener("click", resumeGame);
+        document
+          .getElementById("restartPauseBtn")
+          .addEventListener("click", restartFromPause);
+        document
+          .getElementById("mainMenuBtn")
+          .addEventListener("click", goToMainMenuFromPause);
+        document
+          .getElementById("settingsPauseBtn")
+          .addEventListener("click", showSettingsFromPause);
 
-      function restartGame() {
-        if (game) {
-          game.resetLevel();
-          game.gameState = "playing";
-        }
-        document.getElementById('gameOverScreen').classList.add('hidden');
-      }
+        // Victory overlay buttons
+        document
+          .getElementById("returnToMainMenuFromVictoryBtn")
+          .addEventListener("click", () => {
+            window.game.returnToMainMenuFromVictory();
+          });
 
-      // Event listeners
-      document.addEventListener('DOMContentLoaded', function() {
-        // Initialize game
-        game = new IceCavernGame();
-        
-        // Button event listeners
-        document.getElementById('startBtn').addEventListener('click', startGame);
-        document.getElementById('pauseBtn').addEventListener('click', pauseGame);
-        document.getElementById('resetBtn').addEventListener('click', resetLevel);
-        document.getElementById('backToMapBtn').addEventListener('click', goToMapSelection);
-        
-        // Pause menu buttons
-        document.getElementById('resumeBtn').addEventListener('click', resumeGame);
-        document.getElementById('restartPauseBtn').addEventListener('click', resetLevel);
-        document.getElementById('mainMenuBtn').addEventListener('click', goToMainMenu);
-        document.getElementById('mapSelectionBtn').addEventListener('click', goToMapSelection);
-        
-        // Game over buttons
-        document.getElementById('restartBtn').addEventListener('click', restartGame);
-        document.getElementById('backToMapBtn2').addEventListener('click', goToMapSelection);
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(event) {
-          if (event.key === 'Escape') {
-            if (document.getElementById('pauseMenu').classList.contains('hidden')) {
-              pauseGame();
+        // Game over screen buttons
+        document
+          .getElementById("restartBtn")
+          .addEventListener("click", () => {
+            document.getElementById("gameOverScreen").classList.add("hidden");
+            if (window.game) {
+              window.game.resetLevel();
+            }
+          });
+
+        document
+          .getElementById("mainMenuFromGameOverBtn")
+          .addEventListener("click", () => {
+            document.getElementById("gameOverScreen").classList.add("hidden");
+            document.getElementById("gameContainer").classList.add("hidden");
+            document.getElementById("mainMenu").classList.remove("hidden");
+          });
+
+        // Toggle controls functionality
+        document
+          .getElementById("toggleControls")
+          .addEventListener("click", toggleControls);
+
+        // Add keyboard shortcut for pause (Escape key)
+        document.addEventListener("keydown", function (event) {
+          if (
+            event.key === "Escape" &&
+            !document
+              .getElementById("mainMenu")
+              .classList.contains("hidden") === false
+          ) {
+            if (
+              document.getElementById("pauseMenu").classList.contains("hidden")
+            ) {
+              showPauseMenu();
             } else {
-              resumeGame();
+              hidePauseMenu();
             }
           }
         });
