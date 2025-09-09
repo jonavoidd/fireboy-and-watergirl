@@ -187,32 +187,32 @@ class Game {
     if (defender === "fireboy" && this.fireboy) {
       let barrierX;
       if (this.fireboy.facingRight) {
-        // Barrier in front when facing right
-        barrierX = this.fireboy.x + this.fireboy.width;
+        // Barrier in front when facing right (with 2px margin)
+        barrierX = this.fireboy.x + this.fireboy.width + 10;
       } else {
-        // Barrier in front when facing left
-        barrierX = this.fireboy.x - 100;
+        // Barrier in front when facing left (with 2px margin)
+        barrierX = this.fireboy.x - 6; // 4px width + 2px margin
       }
 
       const barrier = new DefenseBarrier(
         barrierX,
-        this.fireboy.y + this.fireboy.height / 2 - 2,
+        this.fireboy.y + this.fireboy.height / 2 - 25, // Center vertically
         defender
       );
       this.defenseWalls.push(barrier);
     } else if (defender === "watergirl" && this.watergirl) {
       let barrierX;
       if (this.watergirl.facingRight) {
-        // Barrier in front when facing right
-        barrierX = this.watergirl.x + this.watergirl.width;
+        // Barrier in front when facing right (with 2px margin)
+        barrierX = this.watergirl.x + this.watergirl.width + 2;
       } else {
-        // Barrier in front when facing left
-        barrierX = this.watergirl.x - 100;
+        // Barrier in front when facing left (with 2px margin)
+        barrierX = this.watergirl.x - 6; // 4px width + 2px margin
       }
 
       const barrier = new DefenseBarrier(
         barrierX,
-        this.watergirl.y + this.watergirl.height / 2 - 2,
+        this.watergirl.y + this.watergirl.height / 2 -25, // Center vertically
         defender
       );
       this.defenseWalls.push(barrier);
@@ -2180,8 +2180,8 @@ class DefenseBarrier {
   constructor(x, y, defender) {
     this.x = x;
     this.y = y;
-    this.width = 100; // Wider barrier
-    this.height = 4; // Very thin barrier
+    this.width = 4; // Very thin barrier (now vertical)
+    this.height = 60; // Barrier height
     this.defender = defender; // 'fireboy' or 'watergirl'
     this.alpha = 0.8;
     this.active = true;
@@ -2208,11 +2208,11 @@ class DefenseBarrier {
     ctx.save();
     ctx.globalAlpha = this.alpha;
 
-    // Create thin barrier with character's element
+    // Create thin vertical barrier with character's element
     const gradient = ctx.createLinearGradient(
       this.x,
       this.y,
-      this.x + this.width,
+      this.x,
       this.y + this.height
     );
 
