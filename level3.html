@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fireboy vs Watergirl - Level 3: Ice Cavern Challenge</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Level 3 Specific Styles */
+      @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+      
+      body {
+        font-family: 'MedievalSharp', cursive;
+        background: #0a0a0a;
+        color: #d4af37;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      #gameHeader {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border-bottom: 3px solid #d4af37;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+      }
+
+      #gameHeader h1 {
+        color: #d4af37;
+        font-size: 1.8em;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+
+      #gameInfo {
+        display: flex;
+        gap: 30px;
+        align-items: center;
+        color: #d4af37;
+        font-size: 1.1em;
+      }
+
+      #gameInfo > div {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 8px 15px;
+        border-radius: 5px;
+        border: 1px solid #8B7355;
+      }
+
+      #scoreInfo {
+        display: flex;
+        gap: 20px;
+      }
+
+      #fireboyScore {
+        color: #ff6b35;
+        font-weight: bold;
+      }
+
+      #watergirlScore {
+        color: #4a90e2;
+        font-weight: bold;
+      }
+
+      #gameArea {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 120px);
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        overflow: hidden;
+      }
+
+      #gameCanvas {
+        display: block;
+        background: 
+          linear-gradient(135deg, #B0E0E6 0%, #87CEEB 25%, #4682B4 50%, #2F4F4F 100%),
+          radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+        border: 2px solid #d4af37;
+        box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+        /* Ice cavern canvas size */
+        width: 1000px;
+        height: 600px;
+        position: relative;
+      }
+      
+      #gameCanvas::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+          repeating-linear-gradient(
+            45deg,
+            transparent 0px,
+            rgba(255, 255, 255, 0.1) 1px,
+            transparent 2px,
+            transparent 10px
+          );
+        pointer-events: none;
+      }
+
+      #gameUI {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid #d4af37;
+        border-radius: 10px;
+        padding: 15px;
+        max-width: 300px;
+        font-size: 0.9em;
+      }
+
+      #gameUI h3 {
+        color: #d4af37;
+        margin: 0 0 10px 0;
+        font-size: 1.2em;
+      }
+
+      #gameUI p {
+        margin: 5px 0;
+        color: #8B7355;
+        line-height: 1.4;
+      }
+
+      #gameUI strong {
+        color: #d4af37;
+      }
+
+      #objectiveText {
+        color: #ff6b35;
+        font-weight: bold;
+      }
+
+      #gameControls {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        z-index: 100;
+      }
+
+      #gameControls button {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        padding: 10px 20px;
+        font-size: 1em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      #gameControls button:hover {
+        background: linear-gradient(135deg, #4a2818, #6a3828);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+      }
+
+      #gameControls button:active {
+        transform: translateY(0);
+      }
+
+      #gameOverScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        font-family: 'MedievalSharp', cursive;
+      }
+
+      #gameOverContent {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 3px solid #d4af37;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 
+          inset 0 0 30px rgba(0,0,0,0.5),
+          0 10px 30px rgba(0,0,0,0.8);
+      }
+
+      #gameOverTitle {
+        color: #d4af37;
+        font-size: 2.5em;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+
+      #gameOverMessage {
+        color: #8B7355;
+        font-size: 1.3em;
+        margin-bottom: 30px;
+      }
+
+      #restartBtn {
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        padding: 12px 25px;
+        font-size: 1.1em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 5px;
+      }
+
+      #restartBtn:hover {
+        background: linear-gradient(135deg, #2a1810, #3a2420);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* Pause Menu Styles */
+      #pauseMenu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        font-family: 'MedievalSharp', cursive;
+      }
+
+      #pauseContent {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 3px solid #d4af37;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 
+          inset 0 0 30px rgba(0,0,0,0.5),
+          0 10px 30px rgba(0,0,0,0.8);
+        animation: pauseSlideIn 0.3s ease-out;
+      }
+
+      @keyframes pauseSlideIn {
+        from {
+          opacity: 0;
+          transform: scale(0.8) translateY(-50px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      #pauseContent h2 {
+        color: #d4af37;
+        font-size: 2.5em;
+        margin-bottom: 30px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        letter-spacing: 2px;
+      }
+
+      .pause-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 250px;
+      }
+
+      .pause-btn {
+        background: linear-gradient(135deg, #1a0f0a, #2a1810);
+        border: 2px solid #d4af37;
+        color: #d4af37;
+        padding: 12px 25px;
+        font-size: 1.1em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 5px;
+      }
+
+      .pause-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+        transition: left 0.5s ease;
+      }
+
+      .pause-btn:hover::before {
+        left: 100%;
+      }
+
+      .pause-btn:hover {
+        background: linear-gradient(135deg, #2a1810, #3a2420);
+        transform: translateY(-2px);
+        box-shadow: 
+          inset 0 0 20px rgba(212, 175, 55, 0.1),
+          0 5px 15px rgba(0,0,0,0.6);
+        text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+      }
+
+      .pause-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Level 3 specific indicators */
+      .level-indicator {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid #d4af37;
+        border-radius: 10px;
+        padding: 10px 15px;
+        color: #d4af37;
+        font-size: 1.1em;
+        font-weight: bold;
+      }
+
+      .ice-cavern-mode {
+        color: #87CEEB;
+        text-shadow: 0 0 10px rgba(135, 206, 235, 0.5);
+      }
+
+      /* Ice trap warning indicator */
+      .ice-warning {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 0, 0, 0.8);
+        border: 2px solid #ff0000;
+        border-radius: 10px;
+        padding: 10px 20px;
+        color: #fff;
+        font-size: 1.2em;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        animation: iceWarningPulse 1s ease-in-out infinite;
+        z-index: 100;
+      }
+
+      @keyframes iceWarningPulse {
+        0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+        50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="gameHeader">
+      <h1>❄️ vs 🔥 Level 3: Ice Cavern Challenge</h1>
+      <div id="gameInfo">
+        <div id="levelInfo">Level: <span id="currentLevel">3</span></div>
+        <div id="modeInfo">
+          Mode: <span id="currentMode" class="ice-cavern-mode">Ice Cavern</span>
+        </div>
+        <div id="scoreInfo">
+          <span id="fireboyScore">Fireboy: 0</span>
+          <span id="watergirlScore">Watergirl: 0</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameArea">
+      <div class="level-indicator">
+        🧊 ICE CAVERN CHALLENGE
+      </div>
+      
+      <canvas id="gameCanvas" width="1400" height="800"></canvas>
+      
+      <div id="gameUI">
+        <h3>Level 3: Ice Cavern Challenge</h3>
+        <p>
+          <strong>Objective:</strong> <span id="objectiveText">Reach the door at the top right!</span>
+        </p>
+        <p>
+          <strong>Special Features:</strong>
+        </p>
+        <p>• Large scale level with bigger challenges</p>
+        <p>• Movable blocks - both players must push together</p>
+        <p>• Falling ice traps - watch your step!</p>
+        <p>• Door located at top right corner</p>
+        <p>• Respawn points below the door area</p>
+        <p>• Work together to survive the ice cavern!</p>
+      </div>
+    </div>
+
+    <div id="gameControls">
+      <button id="startBtn">Start Adventure</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="resetBtn">Reset Level</button>
+      <button id="backToMapBtn">Back to Map</button>
+    </div>
+
+    <div id="gameOverScreen" class="hidden">
+      <div id="gameOverContent">
+        <h2 id="gameOverTitle">Adventure Complete!</h2>
+        <p id="gameOverMessage">Fireboy Wins!</p>
+        <button id="restartBtn">Adventure Again</button>
+        <button id="nextLevelBtn" style="display: none">Next Level</button>
+        <button id="backToMapBtn2">Back to Map</button>
+      </div>
+    </div>
+
+    <!-- Pause Menu -->
+    <div id="pauseMenu" class="hidden">
+      <div id="pauseContent">
+        <h2>Adventure Paused</h2>
+        <div class="pause-buttons">
+          <button id="resumeBtn" class="pause-btn">Resume Adventure</button>
+          <button id="restartPauseBtn" class="pause-btn">Restart Level</button>
+          <button id="mainMenuBtn" class="pause-btn">Main Menu</button>
+          <button id="mapSelectionBtn" class="pause-btn">Map Selection</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="settings.js"></script>
+    <script src="pointSystem.js"></script>
+    <script src="game.js"></script>
+    
+    <script>
+      // Level 3 specific game initialization
+      class Level3Game extends Game {
+        constructor() {
+          super();
+          this.currentLevel = 3;
+          this.gameMode = "cooperative";
+          this.width = 1000;
+          this.height = 600;
+          
+          // Level 3 specific settings
+          this.projectileSpeed = 6; // Slightly slower for larger level
+          this.defenseCooldownTime = 10000; // 10 seconds
+          this.powerUpSpawnRate = 15000; // Every 15 seconds
+          this.enemyAggression = 1.2; // Moderate AI
+          
+          // Level 3 specific features
+          this.movableBlocks = [];
+          this.iceTraps = [];
+          this.iceTrapTriggers = [];
+          this.respawnPoints = [];
+          this.doorLocation = { x: 920, y: 80 }; // Top right corner
+          
+          // Initialize canvas with larger size
+          this.canvas.width = this.width;
+          this.canvas.height = this.height;
+          
+          // Ice background
+          this.iceBackground = new Image();
+          this.iceBackground.src = 'assets/Ice.png';
+          this.iceBackground.onload = () => {
+            console.log('Ice background loaded successfully');
+          };
+          this.iceBackground.onerror = () => {
+            console.log('Failed to load ice background, using fallback');
+          };
+        }
+
+        createLevel(levelNumber) {
+          super.createLevel(levelNumber);
+          
+          // Level 3 specific setup
+          this.setupIceCavernLevel();
+        }
+
+        setupIceCavernLevel() {
+          // Create three-story ice cavern layout
+          this.platforms = [
+            // Ground floor (Story 1)
+            { x: 0, y: 580, width: 1000, height: 20, type: 'ice' },
+            
+            // First story platforms
+            { x: 100, y: 520, width: 150, height: 20, type: 'ice' },
+            { x: 280, y: 480, width: 150, height: 20, type: 'ice' },
+            { x: 460, y: 520, width: 150, height: 20, type: 'ice' },
+            { x: 640, y: 480, width: 150, height: 20, type: 'ice' },
+            { x: 820, y: 520, width: 150, height: 20, type: 'ice' },
+            
+            // Second story floor
+            { x: 0, y: 380, width: 300, height: 20, type: 'ice' },
+            { x: 400, y: 380, width: 600, height: 20, type: 'ice' },
+            
+            // Second story platforms
+            { x: 150, y: 320, width: 150, height: 20, type: 'ice' },
+            { x: 350, y: 290, width: 150, height: 20, type: 'ice' },
+            { x: 550, y: 320, width: 150, height: 20, type: 'ice' },
+            { x: 750, y: 290, width: 150, height: 20, type: 'ice' },
+            
+            // Third story floor
+            { x: 0, y: 180, width: 400, height: 20, type: 'ice' },
+            { x: 500, y: 180, width: 500, height: 20, type: 'ice' },
+            
+            // Third story platforms leading to door
+            { x: 750, y: 120, width: 250, height: 20, type: 'door' }
+          ];
+
+          // Create movable ice blocks (require both players to push)
+          this.movableBlocks = [
+            { x: 300, y: 540, width: 40, height: 40, type: 'movable', 
+              originalX: 300, originalY: 540, beingPushed: false, 
+              pushDirection: 0, pushSpeed: 50, requiredPlayers: 2 },
+            { x: 200, y: 340, width: 40, height: 40, type: 'movable',
+              originalX: 200, originalY: 340, beingPushed: false,
+              pushDirection: 0, pushSpeed: 50, requiredPlayers: 2 },
+            { x: 600, y: 340, width: 40, height: 40, type: 'movable',
+              originalX: 600, originalY: 340, beingPushed: false,
+              pushDirection: 0, pushSpeed: 50, requiredPlayers: 2 },
+            { x: 450, y: 140, width: 40, height: 40, type: 'movable',
+              originalX: 450, originalY: 140, beingPushed: false,
+              pushDirection: 0, pushSpeed: 50, requiredPlayers: 2 }
+          ];
+
+          // Create ice traps
+          this.iceTraps = [
+            { x: 250, y: 100, width: 80, height: 20, type: 'ice', 
+              triggered: false, falling: false, fallSpeed: 200 },
+            { x: 550, y: 200, width: 80, height: 20, type: 'ice',
+              triggered: false, falling: false, fallSpeed: 200 },
+            { x: 850, y: 300, width: 80, height: 20, type: 'ice',
+              triggered: false, falling: false, fallSpeed: 200 }
+          ];
+
+          // Create ice trap triggers (pressure plates)
+          this.iceTrapTriggers = [
+            { x: 250, y: 650, width: 40, height: 20, type: 'trigger', 
+              trapIndex: 0, activated: false },
+            { x: 550, y: 550, width: 40, height: 20, type: 'trigger',
+              trapIndex: 1, activated: false },
+            { x: 850, y: 450, width: 40, height: 20, type: 'trigger',
+              trapIndex: 2, activated: false }
+          ];
+
+          // Create respawn points below door area
+          this.respawnPoints = [
+            { x: 100, y: 700, type: 'respawn' },
+            { x: 800, y: 700, type: 'respawn' }
+          ];
+
+          // Spawn initial power-ups
+          this.spawnPowerUp();
+          
+          // Update UI for ice cavern mode
+          document.getElementById('objectiveText').textContent = 'Reach the door at the top right!';
+        }
+
+        update(deltaTime) {
+          super.update(deltaTime);
+          
+          // Level 3 specific updates
+          this.updateMovableBlocks(deltaTime);
+          this.updateIceTraps(deltaTime);
+          this.updateIceTrapTriggers(deltaTime);
+        }
+
+        updateMovableBlocks(deltaTime) {
+          this.movableBlocks.forEach(block => {
+            if (block.beingPushed && block.pushDirection !== 0) {
+              // Move the block
+              block.x += block.pushDirection * block.pushSpeed * deltaTime;
+              
+              // Keep block within bounds
+              block.x = Math.max(0, Math.min(block.x, this.width - block.width));
+              
+              // Check if block hits a platform or another block
+              this.checkBlockCollisions(block);
+            }
+          });
+        }
+
+        updateIceTraps(deltaTime) {
+          this.iceTraps.forEach(trap => {
+            if (trap.triggered && !trap.falling) {
+              // Start falling after a short delay
+              setTimeout(() => {
+                trap.falling = true;
+              }, 1000);
+            }
+            
+            if (trap.falling) {
+              trap.y += trap.fallSpeed * deltaTime;
+              
+              // Check if trap hits ground or platform
+              if (trap.y >= this.height - 50) {
+                trap.falling = false;
+                trap.triggered = false;
+                trap.y = 100; // Reset position
+              }
+            }
+          });
+        }
+
+        updateIceTrapTriggers(deltaTime) {
+          this.iceTrapTriggers.forEach(trigger => {
+            if (this.fireboy && this.watergirl) {
+              const fireboyOnTrigger = this.checkCollision(this.fireboy, trigger);
+              const watergirlOnTrigger = this.checkCollision(this.watergirl, trigger);
+              
+              if ((fireboyOnTrigger || watergirlOnTrigger) && !trigger.activated) {
+                trigger.activated = true;
+                this.iceTraps[trigger.trapIndex].triggered = true;
+                this.addTextEffect(trigger.x, trigger.y - 20, "ICE TRAP ACTIVATED!", "#ff0000");
+                this.playSound(400, 0.5, "square");
+              }
+            }
+          });
+        }
+
+        checkBlockCollisions(block) {
+          // Check collision with platforms
+          this.platforms.forEach(platform => {
+            if (this.checkCollision(block, platform)) {
+              // Stop the block
+              block.beingPushed = false;
+              block.pushDirection = 0;
+            }
+          });
+          
+          // Check collision with other blocks
+          this.movableBlocks.forEach(otherBlock => {
+            if (otherBlock !== block && this.checkCollision(block, otherBlock)) {
+              block.beingPushed = false;
+              block.pushDirection = 0;
+            }
+          });
+        }
+
+        checkCollision(obj1, obj2) {
+          return (
+            obj1.x < obj2.x + obj2.width &&
+            obj1.x + obj1.width > obj2.x &&
+            obj1.y < obj2.y + obj2.height &&
+            obj1.y + obj1.height > obj2.y
+          );
+        }
+
+        checkMovableBlockCollisions() {
+          if (!this.fireboy || !this.watergirl) return;
+          
+          this.movableBlocks.forEach(block => {
+            const fireboyPushing = this.checkCollision(this.fireboy, block);
+            const watergirlPushing = this.checkCollision(this.watergirl, block);
+            
+            if (fireboyPushing && watergirlPushing) {
+              // Both players are pushing - determine direction
+              const fireboyDirection = this.fireboy.facingRight ? 1 : -1;
+              const watergirlDirection = this.watergirl.facingRight ? 1 : -1;
+              
+              if (fireboyDirection === watergirlDirection) {
+                // Both pushing in same direction
+                block.beingPushed = true;
+                block.pushDirection = fireboyDirection;
+                this.addTextEffect(block.x, block.y - 20, "PUSHING TOGETHER!", "#00ff00");
+              } else {
+                // Pushing in opposite directions - no movement
+                block.beingPushed = false;
+                block.pushDirection = 0;
+              }
+            } else {
+              // Not enough players pushing
+              block.beingPushed = false;
+              block.pushDirection = 0;
+            }
+          });
+        }
+
+        checkWinConditions() {
+          if (!this.fireboy || !this.watergirl) return;
+          
+          // Check if either player reaches the door
+          const doorPlatform = this.platforms.find(p => p.type === 'door');
+          if (doorPlatform) {
+            const fireboyAtDoor = this.checkCollision(this.fireboy, doorPlatform);
+            const watergirlAtDoor = this.checkCollision(this.watergirl, doorPlatform);
+            
+            if (fireboyAtDoor) {
+              this.endGame("Fireboy Reached the Door!", "fireboy");
+            } else if (watergirlAtDoor) {
+              this.endGame("Watergirl Reached the Door!", "watergirl");
+            }
+          }
+        }
+
+        endGame(message, winner) {
+          this.gameState = "gameOver";
+          document.getElementById('gameOverMessage').textContent = message;
+          document.getElementById('gameOverTitle').textContent = "Adventure Complete!";
+          
+          // Show appropriate buttons
+          document.getElementById('restartBtn').style.display = 'inline-block';
+          document.getElementById('nextLevelBtn').style.display = 'none';
+          document.getElementById('backToMapBtn2').style.display = 'inline-block';
+          
+          document.getElementById('gameOverScreen').classList.remove('hidden');
+          
+          // Update points system
+          if (window.updatePoints) {
+            window.updatePoints(winner, 150); // Bonus points for level 3 victory
+          }
+          
+          // Unlock next level
+          if (window.unlockNextLevel) {
+            window.unlockNextLevel(3, 3); // 3 stars for completing level 3
+          }
+        }
+
+        resetLevel() {
+          super.resetLevel();
+          this.setupIceCavernLevel();
+        }
+
+        drawBackground() {
+          // Override the base drawBackground to use ice background
+          if (this.iceBackground.complete && this.iceBackground.naturalWidth > 0) {
+            // Draw the ice background image
+            this.ctx.drawImage(this.iceBackground, 0, 0, this.width, this.height);
+            console.log('Drawing ice background image');
+          } else {
+            // Enhanced ice-themed fallback background
+            console.log('Using ice fallback background');
+            
+            // Create a more detailed ice cavern background
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+            gradient.addColorStop(0, '#B0E0E6'); // Light blue at top
+            gradient.addColorStop(0.3, '#87CEEB'); // Sky blue
+            gradient.addColorStop(0.7, '#4682B4'); // Steel blue
+            gradient.addColorStop(1, '#2F4F4F'); // Dark slate gray at bottom
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.width, this.height);
+            
+            // Add ice crystal effects
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 20; i++) {
+              const x = Math.random() * this.width;
+              const y = Math.random() * this.height;
+              const size = Math.random() * 10 + 5;
+              this.ctx.beginPath();
+              this.ctx.arc(x, y, size, 0, Math.PI * 2);
+              this.ctx.fill();
+            }
+            
+            // Add ice stalactites at the top
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            for (let i = 0; i < 15; i++) {
+              const x = (i * this.width) / 15;
+              const height = Math.random() * 30 + 10;
+              this.ctx.fillRect(x, 0, 3, height);
+            }
+          }
+        }
+
+        render() {
+          super.render();
+          
+          // Level 3 specific rendering
+          this.drawMovableBlocks();
+          this.drawIceTraps();
+          this.drawIceTrapTriggers();
+        }
+
+        drawMovableBlocks() {
+          this.movableBlocks.forEach(block => {
+            // Draw block
+            this.ctx.fillStyle = '#4682B4';
+            this.ctx.fillRect(block.x, block.y, block.width, block.height);
+            
+            // Draw ice texture
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.fillRect(block.x + 5, block.y + 5, block.width - 10, block.height - 10);
+            
+            // Draw push indicator
+            if (block.beingPushed) {
+              this.ctx.fillStyle = '#00ff00';
+              this.ctx.fillRect(block.x - 2, block.y - 2, block.width + 4, 2);
+            }
+          });
+        }
+
+        drawIceTraps() {
+          this.iceTraps.forEach(trap => {
+            if (trap.triggered) {
+              // Draw falling ice
+              this.ctx.fillStyle = '#87CEEB';
+              this.ctx.fillRect(trap.x, trap.y, trap.width, trap.height);
+              
+              // Draw warning effect
+              this.ctx.strokeStyle = '#ff0000';
+              this.ctx.lineWidth = 3;
+              this.ctx.strokeRect(trap.x - 5, trap.y - 5, trap.width + 10, trap.height + 10);
+            }
+          });
+        }
+
+        drawIceTrapTriggers() {
+          this.iceTrapTriggers.forEach(trigger => {
+            // Draw pressure plate
+            this.ctx.fillStyle = trigger.activated ? '#ff0000' : '#ffa500';
+            this.ctx.fillRect(trigger.x, trigger.y, trigger.width, trigger.height);
+            
+            // Draw warning text
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = '12px Arial';
+            this.ctx.fillText('TRAP', trigger.x - 10, trigger.y - 5);
+          });
+        }
+        
+      }
+
+      // Initialize the game when the page loads
+      let game;
+      window.addEventListener('load', () => {
+        game = new Level3Game();
+      });
+    </script>
+  </body>
+</html>
+        }
+        
+        activateDefense(character) {
+          character.defenseActive = true;
+          character.defenseCooldown = 420; // 7 seconds at 60fps
+          
+          const wall = {
+            x: character.x - 10,
+            y: character.y - 10,
+            width: character.width + 20,
+            height: character.height + 20,
+            duration: 180, // 3 seconds
+            owner: character.type
+          };
+          
+          this.defenseWalls.push(wall);
+        }
+        
+        useUltimate(character) {
+          character.ultimateReady = false;
+          character.defenseCount = 0;
+          
+          // Create ultimate attack effect
+          for (let i = 0; i < 8; i++) {
+            const angle = (Math.PI * 2 * i) / 8;
+            const projectile = {
+              x: character.x + character.width / 2,
+              y: character.y + character.height / 2,
+              width: 15,
+              height: 15,
+              vx: Math.cos(angle) * 10,
+              vy: Math.sin(angle) * 10,
+              type: character.type === 'fireboy' ? 'fireball' : 'waterball',
+              owner: character.type,
+              ultimate: true
+            };
+            this.projectiles.push(projectile);
+          }
+          
+          this.createEffect(character.x, character.y, 'ultimate');
+        }
+        
+        createEffect(x, y, type) {
+          this.effects.push({
+            x: x,
+            y: y,
+            type: type,
+            frame: 0,
+            maxFrames: 30
+          });
+        }
+        
+        update() {
+          if (this.gameState !== 'playing') return;
+          
+          // Update characters
+          this.updateCharacter(this.fireboy, 'wasd');
+          this.updateCharacter(this.watergirl, 'arrows');
+          
+          // Update movable blocks
+          this.updateMovableBlocks();
+          
+          // Update projectiles
+          this.updateProjectiles();
+          
+          // Update defense walls
+          this.updateDefenseWalls();
+          
+          // Update effects
+          this.updateEffects();
+          
+          // Check collisions
+          this.checkCollisions();
+          
+          // Check win condition
+          this.checkWinCondition();
+        }
+
+        updateCharacter(character, controls) {
+          // Handle input
+          if (controls === 'wasd') {
+            if (this.keys['a']) character.vx = -character.speed;
+            else if (this.keys['d']) character.vx = character.speed;
+            else character.vx *= this.friction;
+            
+            if (this.keys['w'] && this.isOnGround(character)) {
+              character.vy = -character.jumpPower;
+            }
+          } else {
+            if (this.keys['arrowleft']) character.vx = -character.speed;
+            else if (this.keys['arrowright']) character.vx = character.speed;
+            else character.vx *= this.friction;
+            
+            if (this.keys['arrowup'] && this.isOnGround(character)) {
+              character.vy = -character.jumpPower;
+            }
+          }
+          
+          // Apply gravity
+          character.vy += this.gravity;
+          
+          // Update position
+          character.x += character.vx;
+          character.y += character.vy;
+          
+          // Platform collision
+          this.platforms.forEach(platform => {
+            if (this.checkCollision(character, platform)) {
+              // Top collision
+              if (character.vy > 0 && character.y < platform.y) {
+                character.y = platform.y - character.height;
+                character.vy = 0;
+              }
+              // Bottom collision
+              else if (character.vy < 0 && character.y > platform.y) {
+                character.y = platform.y + platform.height;
+                character.vy = 0;
+              }
+              // Side collisions
+              if (character.vx > 0 && character.x < platform.x) {
+                character.x = platform.x - character.width;
+                character.vx = 0;
+              }
+              else if (character.vx < 0 && character.x > platform.x) {
+                character.x = platform.x + platform.width;
+                character.vx = 0;
+              }
+            }
+          });
+          
+          // Movable block collision
+          this.movableBlocks.forEach(block => {
+            if (this.checkCollision(character, block)) {
+              // Check if character is pushing
+              const pushing = (controls === 'wasd' && (this.keys['a'] || this.keys['d'])) ||
+                             (controls === 'arrows' && (this.keys['arrowleft'] || this.keys['arrowright']));
+              
+              if (pushing) {
+                // Add character to pushers if not already there
+                if (!block.beingPushed.includes(character.type)) {
+                  block.beingPushed.push(character.type);
+                }
+              } else {
+                // Remove from pushers
+                block.beingPushed = block.beingPushed.filter(p => p !== character.type);
+              }
+              
+              // Stop character at block
+              if (character.vx > 0 && character.x < block.x) {
+                character.x = block.x - character.width;
+              }
+              else if (character.vx < 0 && character.x > block.x) {
+                character.x = block.x + block.width;
+              }
+            } else {
+              // Remove from pushers if not touching
+              this.movableBlocks.forEach(b => {
+                b.beingPushed = b.beingPushed.filter(p => p !== character.type);
+              });
+            }
+          });
+          
+          // Keep character in bounds
+          character.x = Math.max(0, Math.min(character.x, this.canvas.width - character.width));
+          character.y = Math.max(0, Math.min(character.y, this.canvas.height - character.height));
+          
+          // Update cooldowns
+          if (character.shootCooldown > 0) {
+            character.shootCooldown--;
+            if (character.shootCooldown === 0) {
+              character.canShoot = true;
+            }
+          }
+          
+          if (character.defenseCooldown > 0) {
+            character.defenseCooldown--;
+          }
+          
+          if (character.defenseCount >= 5) {
+            character.ultimateReady = true;
+          }
+        }
+        
+        isOnGround(character) {
+          return this.platforms.some(platform => 
+            character.x < platform.x + platform.width &&
+            character.x + character.width > platform.x &&
+            character.y + character.height >= platform.y &&
+            character.y + character.height <= platform.y + platform.height + 5
+          );
+        }
+        
+        updateMovableBlocks() {
+          this.movableBlocks.forEach(block => {
+            // Check if enough players are pushing
+            if (block.beingPushed.length >= block.pushRequired) {
+              // Determine push direction
+              let pushDirection = 0;
+              if (this.fireboy.x < block.x && block.beingPushed.includes('fireboy') && this.keys['d']) {
+                pushDirection += 1;
+              }
+              if (this.fireboy.x > block.x && block.beingPushed.includes('fireboy') && this.keys['a']) {
+                pushDirection -= 1;
+              }
+              if (this.watergirl.x < block.x && block.beingPushed.includes('watergirl') && this.keys['arrowright']) {
+                pushDirection += 1;
+              }
+              if (this.watergirl.x > block.x && block.beingPushed.includes('watergirl') && this.keys['arrowleft']) {
+                pushDirection -= 1;
+              }
+              
+              // Move block if both pushing same direction
+              if (pushDirection !== 0) {
+                block.vx = pushDirection * 2;
+                
+                // Show visual feedback
+                if (Math.random() < 0.1) {
+                  this.createEffect(block.x + block.width/2, block.y - 10, 'push');
+                }
+              }
+            } else {
+              block.vx *= 0.9; // Friction
+            }
+            
+            // Apply gravity to blocks
+            block.vy += this.gravity;
+            
+            // Update position
+            block.x += block.vx;
+            block.y += block.vy;
+            
+            // Platform collision for blocks
+            this.platforms.forEach(platform => {
+              if (this.checkCollision(block, platform)) {
+                if (block.vy > 0 && block.y < platform.y) {
+                  block.y = platform.y - block.height;
+                  block.vy = 0;
+                }
+              }
+            });
+            
+            // Block-to-block collision
+            this.movableBlocks.forEach(otherBlock => {
+              if (block !== otherBlock && this.checkCollision(block, otherBlock)) {
+                // Simple separation
+                const dx = block.x - otherBlock.x;
+                if (dx > 0) {
+                  block.x = otherBlock.x + otherBlock.width;
+                } else {
+                  block.x = otherBlock.x - block.width;
+                }
+                block.vx = 0;
+              }
+            });
+            
+            // Keep blocks in bounds
+            block.x = Math.max(0, Math.min(block.x, this.canvas.width - block.width));
+          });
+        }
+
+        updateProjectiles() {
+          this.projectiles = this.projectiles.filter(projectile => {
+            projectile.x += projectile.vx;
+            projectile.y += projectile.vy;
+            
+            // Check collision with characters
+            const target = projectile.owner === 'fireboy' ? this.watergirl : this.fireboy;
+            if (target && this.checkCollision(projectile, target)) {
+              // Handle hit
+              target.health -= projectile.ultimate ? 30 : 10;
+              this.createEffect(target.x, target.y, 'hit');
+              
+              // Award defense points
+              if (projectile.owner === 'fireboy') {
+                this.watergirl.defenseCount++;
+              } else {
+                this.fireboy.defenseCount++;
+              }
+              
+              return false; // Remove projectile
+            }
+            
+            // Check collision with defense walls
+            const hitWall = this.defenseWalls.find(wall => 
+              wall.owner !== projectile.owner && this.checkCollision(projectile, wall)
+            );
+            if (hitWall) {
+              this.createEffect(projectile.x, projectile.y, 'block');
+              return false; // Remove projectile
+            }
+            
+            // Remove if off screen
+            return projectile.x > 0 && projectile.x < this.canvas.width &&
+                   projectile.y > 0 && projectile.y < this.canvas.height;
+          });
+        }
+        
+        updateDefenseWalls() {
+          this.defenseWalls = this.defenseWalls.filter(wall => {
+            wall.duration--;
+            return wall.duration > 0;
+          });
+        }
+        
+        updateEffects() {
+          this.effects = this.effects.filter(effect => {
+            effect.frame++;
+            return effect.frame < effect.maxFrames;
+          });
+        }
+        
+        checkCollisions() {
+          // Check power-up collisions
+          this.powerUps = this.powerUps.filter(powerUp => {
+            if (this.checkCollision(this.fireboy, powerUp)) {
+              this.applyPowerUp(this.fireboy, powerUp);
+              this.createEffect(powerUp.x, powerUp.y, 'powerup');
+              return false;
+            }
+            if (this.checkCollision(this.watergirl, powerUp)) {
+              this.applyPowerUp(this.watergirl, powerUp);
+              this.createEffect(powerUp.x, powerUp.y, 'powerup');
+              return false;
+            }
+            return true;
+          });
+        }
+        
+        applyPowerUp(character, powerUp) {
+          switch (powerUp.type) {
+            case 'health':
+              character.health = Math.min(character.maxHealth, character.health + 25);
+              break;
+            case 'speed':
+              character.speed = Math.min(8, character.speed + 1);
+              break;
+            case 'power':
+              character.shootCooldown = Math.max(10, character.shootCooldown - 5);
+              break;
+          }
+        }
+        
+        checkCollision(obj1, obj2) {
+          return obj1.x < obj2.x + obj2.width &&
+                 obj1.x + obj1.width > obj2.x &&
+                 obj1.y < obj2.y + obj2.height &&
+                 obj1.y + obj1.height > obj2.y;
+        }
+        
+        checkWinCondition() {
+          if (this.door && !this.door.reached) {
+            if (this.checkCollision(this.fireboy, this.door)) {
+              this.door.reached = 'fireboy';
+              this.endGame('Fireboy Reached the Door!', 'fireboy');
+            } else if (this.checkCollision(this.watergirl, this.door)) {
+              this.door.reached = 'watergirl';
+              this.endGame('Watergirl Reached the Door!', 'watergirl');
+            }
+          }
+        }
+        
+        endGame(message, winner) {
+          this.gameState = 'gameOver';
+          document.getElementById('gameOverMessage').textContent = message;
+          document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+        
+        gameLoop() {
+          this.update();
+          this.render();
+          requestAnimationFrame(() => this.gameLoop());
+        }
+        
+        render() {
+          // Clear canvas
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          
+          // Draw ice background
+          if (this.iceBackground.complete && this.iceBackground.naturalWidth > 0) {
+            // Draw the ice background image
+            this.ctx.drawImage(this.iceBackground, 0, 0, this.canvas.width, this.canvas.height);
+            console.log('Drawing ice background image');
+          } else {
+            // Enhanced ice-themed fallback background
+            console.log('Using ice fallback background');
+            
+            // Create a more detailed ice cavern background
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+            gradient.addColorStop(0, '#B0E0E6'); // Light blue at top
+            gradient.addColorStop(0.3, '#87CEEB'); // Sky blue
+            gradient.addColorStop(0.7, '#4682B4'); // Steel blue
+            gradient.addColorStop(1, '#2F4F4F'); // Dark slate gray at bottom
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // Add ice crystal effects
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 20; i++) {
+              const x = Math.random() * this.canvas.width;
+              const y = Math.random() * this.canvas.height;
+              const size = Math.random() * 10 + 5;
+              this.ctx.beginPath();
+              this.ctx.arc(x, y, size, 0, Math.PI * 2);
+              this.ctx.fill();
+            }
+            
+            // Add ice stalactites at the top
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            for (let i = 0; i < 15; i++) {
+              const x = (i * this.canvas.width) / 15;
+              const height = Math.random() * 30 + 10;
+              this.ctx.fillRect(x, 0, 3, height);
+            }
+          }
+          
+          // Draw platforms
+          this.platforms.forEach(platform => {
+            this.ctx.fillStyle = platform.color;
+            this.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Add ice effect
+            this.ctx.strokeStyle = '#FFFFFF';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+          });
+          
+          // Draw movable blocks
+          this.movableBlocks.forEach(block => {
+            this.ctx.fillStyle = block.color;
+            this.ctx.fillRect(block.x, block.y, block.width, block.height);
+            
+            // Add push indicator
+            if (block.beingPushed.length >= block.pushRequired) {
+              this.ctx.fillStyle = '#00FF00';
+              this.ctx.fillRect(block.x + 5, block.y + 5, block.width - 10, 5);
+            }
+            
+            this.ctx.strokeStyle = '#FFFFFF';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(block.x, block.y, block.width, block.height);
+          });
+          
+          // Draw door
+          if (this.door) {
+            this.ctx.fillStyle = '#8B4513';
+            this.ctx.fillRect(this.door.x, this.door.y, this.door.width, this.door.height);
+            this.ctx.strokeStyle = '#FFD700';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(this.door.x, this.door.y, this.door.width, this.door.height);
+            
+            // Door handle
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.beginPath();
+            this.ctx.arc(this.door.x + 45, this.door.y + 40, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+          }
+          
+          // Draw power-ups
+          this.powerUps.forEach(powerUp => {
+            if (!powerUp.collected) {
+              this.ctx.fillStyle = powerUp.type === 'health' ? '#FF0000' : 
+                                 powerUp.type === 'speed' ? '#00FF00' : '#FFFF00';
+              this.ctx.beginPath();
+              this.ctx.arc(powerUp.x + 10, powerUp.y + 10, 10, 0, Math.PI * 2);
+              this.ctx.fill();
+            }
+          });
+          
+          // Draw projectiles
+          this.projectiles.forEach(projectile => {
+            this.ctx.fillStyle = projectile.type === 'fireball' ? '#FF6B35' : '#4A90E2';
+            this.ctx.beginPath();
+            this.ctx.arc(projectile.x, projectile.y, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+          });
+          
+          // Draw defense walls
+          this.defenseWalls.forEach(wall => {
+            this.ctx.fillStyle = wall.owner === 'fireboy' ? 'rgba(255, 107, 53, 0.5)' : 'rgba(74, 144, 226, 0.5)';
+            this.ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+          });
+          
+          // Draw characters
+          this.ctx.fillStyle = this.fireboy.color;
+          this.ctx.fillRect(this.fireboy.x, this.fireboy.y, this.fireboy.width, this.fireboy.height);
+          
+          this.ctx.fillStyle = this.watergirl.color;
+          this.ctx.fillRect(this.watergirl.x, this.watergirl.y, this.watergirl.width, this.watergirl.height);
+          
+          // Draw effects
+          this.effects.forEach(effect => {
+            this.ctx.fillStyle = effect.type === 'hit' ? '#FF0000' : 
+                               effect.type === 'powerup' ? '#FFFF00' : '#00FF00';
+            this.ctx.beginPath();
+            this.ctx.arc(effect.x, effect.y, 15 - effect.frame, 0, Math.PI * 2);
+            this.ctx.fill();
+          });
+          
+          // Draw UI
+          this.drawUI();
+        }
+        
+        drawUI() {
+          // Health bars
+          this.ctx.fillStyle = '#333';
+          this.ctx.fillRect(10, 10, 204, 24);
+          this.ctx.fillStyle = '#FF0000';
+          this.ctx.fillRect(12, 12, (this.fireboy.health / this.fireboy.maxHealth) * 200, 20);
+          
+          this.ctx.fillStyle = '#333';
+          this.ctx.fillRect(this.canvas.width - 214, 10, 204, 24);
+          this.ctx.fillStyle = '#4A90E2';
+          this.ctx.fillRect(this.canvas.width - 212, 12, (this.watergirl.health / this.watergirl.maxHealth) * 200, 20);
+          
+          // Defense indicators
+          this.ctx.fillStyle = '#FFFFFF';
+          this.ctx.font = '16px Arial';
+          this.ctx.fillText(`Defense: ${this.fireboy.defenseCount}/5`, 10, 50);
+          this.ctx.fillText(`Defense: ${this.watergirl.defenseCount}/5`, this.canvas.width - 150, 50);
+          
+          // Ultimate indicators
+          if (this.fireboy.ultimateReady) {
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.fillText('ULTIMATE READY!', 10, 70);
+          }
+          if (this.watergirl.ultimateReady) {
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.fillText('ULTIMATE READY!', this.canvas.width - 150, 70);
+          }
+        }
+
+      }
+
+      // Initialize Level 3 Game
+      let game = null;
+
+      // Game control functions
+      function startGame() {
+        if (!game) {
+          game = new IceCavernGame();
+        } else {
+          game.resetLevel();
+          game.gameState = "playing";
+        }
+        document.getElementById('startBtn').textContent = 'Restart Adventure';
+      }
+
+      function pauseGame() {
+        if (game) {
+          game.gameState = "paused";
+          document.getElementById('pauseMenu').classList.remove('hidden');
+        }
+      }
+
+      function resumeGame() {
+        if (game) {
+          game.gameState = "playing";
+          document.getElementById('pauseMenu').classList.add('hidden');
+        }
+      }
+
+      function resetLevel() {
+        if (game) {
+          game.resetLevel();
+        }
+      }
+
+      function goToMainMenu() {
+        window.location.href = 'main-menu.html';
+      }
+
+      function goToMapSelection() {
+        window.location.href = 'map-selection.html';
+      }
+
+      function restartGame() {
+        if (game) {
+          game.resetLevel();
+          game.gameState = "playing";
+        }
+        document.getElementById('gameOverScreen').classList.add('hidden');
+      }
+
+      // Event listeners
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize game
+        game = new IceCavernGame();
+        
+        // Button event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('pauseBtn').addEventListener('click', pauseGame);
+        document.getElementById('resetBtn').addEventListener('click', resetLevel);
+        document.getElementById('backToMapBtn').addEventListener('click', goToMapSelection);
+        
+        // Pause menu buttons
+        document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+        document.getElementById('restartPauseBtn').addEventListener('click', resetLevel);
+        document.getElementById('mainMenuBtn').addEventListener('click', goToMainMenu);
+        document.getElementById('mapSelectionBtn').addEventListener('click', goToMapSelection);
+        
+        // Game over buttons
+        document.getElementById('restartBtn').addEventListener('click', restartGame);
+        document.getElementById('backToMapBtn2').addEventListener('click', goToMapSelection);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+          if (event.key === 'Escape') {
+            if (document.getElementById('pauseMenu').classList.contains('hidden')) {
+              pauseGame();
+            } else {
+              resumeGame();
+            }
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
