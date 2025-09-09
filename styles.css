@@ -760,3 +760,90 @@ button:disabled {
 #gameInfo .pause-btn:active {
   transform: translateY(0);
 }
+
+/* Victory Overlay Styles */
+.victory-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.victory-content {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 3px solid #ffd700;
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  max-width: 500px;
+  width: 90%;
+  animation: victoryPulse 2s ease-in-out infinite;
+}
+
+@keyframes victoryPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.victory-content h2 {
+  font-size: 3em;
+  margin-bottom: 30px;
+  text-shadow: 0 0 20px currentColor;
+  font-family: "Orbitron", sans-serif;
+  font-weight: 900;
+  animation: victoryGlow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes victoryGlow {
+  from {
+    text-shadow: 0 0 20px currentColor;
+  }
+  to {
+    text-shadow: 0 0 30px currentColor, 0 0 40px currentColor;
+  }
+}
+
+.victory-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.victory-buttons .menu-btn {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  border: 2px solid #b8860b;
+  color: #000;
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-family: "Orbitron", sans-serif;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.victory-buttons .menu-btn:hover {
+  background: linear-gradient(135deg, #ffed4e, #ffd700);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.victory-buttons .menu-btn:active {
+  transform: translateY(0);
+}
