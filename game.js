@@ -27,6 +27,18 @@ class Game {
     this.lastTime = 0;
     this.gameSpeed = 1;
 
+    // Door system
+    this.door = null;
+    this.doorSpawnTime = 0;
+    this.doorSpawnDelay = 0;
+    this.doorActive = false;
+    this.doorCountdown = 0;
+    this.gameStartTime = 0;
+    this.defenseCount = {
+      fireboy: 0,
+      watergirl: 0,
+    };
+
     // Sound effects (using Web Audio API)
     this.audioContext = null;
     this.sounds = {};
@@ -36,9 +48,10 @@ class Game {
       background: null,
       fireboySprite: null,
       watergirlSprite: null,
+      doorSprite: null,
     };
     this.assetsLoaded = 0;
-    this.totalAssets = 3;
+    this.totalAssets = 4;
 
     this.init();
   }
@@ -47,6 +60,8 @@ class Game {
     this.setupEventListeners();
     this.initAudio();
     this.loadAssets();
+    // Start game loop immediately
+    this.gameLoop();
   }
 
   loadAssets() {
@@ -73,12 +88,19 @@ class Game {
       this.checkAssetsLoaded();
     };
     this.assets.watergirlSprite.src = "assets/watergirl.webp";
+
+    // Load Door sprite
+    this.assets.doorSprite = new Image();
+    this.assets.doorSprite.onload = () => {
+      this.assetsLoaded++;
+      this.checkAssetsLoaded();
+    };
+    this.assets.doorSprite.src = "assets/door-asset.png";
   }
 
   checkAssetsLoaded() {
     if (this.assetsLoaded >= this.totalAssets) {
       this.createLevel(this.currentLevel);
-      this.gameLoop();
     }
   }
 
@@ -120,6 +142,10 @@ class Game {
     this.effects.push(new Effect(x, y, type, duration));
   }
 
+  addTextEffect(x, y, text, color, duration = 2000) {
+    this.effects.push(new TextEffect(x, y, text, color, duration));
+  }
+
   setupEventListeners() {
     // Keyboard controls
     document.addEventListener("keydown", (e) => {
@@ -157,7 +183,20 @@ class Game {
     this.goals = [];
     this.enemies = [];
 
-    // Create characters
+    // Reset door system
+    this.door = null;
+    this.doorActive = false;
+    this.doorCountdown = 0;
+    this.gameStartTime = Date.now();
+    this.doorSpawnDelay = 30000 + Math.random() * 30000; // 30-60 seconds
+
+    // Reset defense counts
+    this.defenseCount = {
+      fireboy: 0,
+      watergirl: 0,
+    };
+
+    // Create characters (always create them, even if assets aren't loaded)
     this.fireboy = new Fireboy(100, this.height - 150);
     this.watergirl = new Watergirl(this.width - 150, this.height - 150);
 
@@ -326,9 +365,16 @@ class Game {
   update(deltaTime) {
     if (this.gameState !== "playing") return;
 
-    // Update characters
-    this.fireboy.update(deltaTime, this.keys, this.platforms);
-    this.watergirl.update(deltaTime, this.keys, this.platforms);
+    // Update door system
+    this.updateDoorSystem(deltaTime);
+
+    // Update characters (only if they exist)
+    if (this.fireboy) {
+      this.fireboy.update(deltaTime, this.keys, this.platforms);
+    }
+    if (this.watergirl) {
+      this.watergirl.update(deltaTime, this.keys, this.platforms);
+    }
 
     // Update projectiles
     this.projectiles.forEach((projectile, index) => {
@@ -356,7 +402,195 @@ class Game {
     this.checkWinConditions();
   }
 
+  updateDoorSystem(deltaTime) {
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - this.gameStartTime;
+
+    // Check if it's time to spawn the door
+    if (!this.doorActive && elapsedTime >= this.doorSpawnDelay) {
+      this.spawnDoor();
+    }
+
+    // Update door countdown
+    if (this.doorActive) {
+      this.doorCountdown = Math.max(0, this.doorSpawnDelay - elapsedTime);
+    }
+
+    // Update door animation
+    if (this.door) {
+      this.door.update(deltaTime);
+    }
+
+    // Check door collision
+    if (this.door && this.fireboy && this.watergirl) {
+      this.checkDoorCollision();
+    }
+  }
+
+  spawnDoor() {
+    // Find a random platform to spawn the door on
+    const availablePlatforms = this.platforms.filter(
+      (platform) => platform.y < this.height - 100 && platform.width > 80
+    );
+
+    if (availablePlatforms.length > 0) {
+      const randomPlatform =
+        availablePlatforms[
+          Math.floor(Math.random() * availablePlatforms.length)
+        ];
+      this.door = new Door(
+        randomPlatform.x + (randomPlatform.width - 60) / 2,
+        randomPlatform.y - 60,
+        this.assets.doorSprite
+      );
+      this.doorActive = true;
+      this.doorSpawnTime = Date.now();
+
+      // Play door spawn sound
+      this.playSound(500, 0.5, "triangle");
+
+      // Add visual effect
+      this.addEffect(this.door.x + 30, this.door.y + 30, "goal");
+      this.addTextEffect(
+        this.door.x + 30,
+        this.door.y - 20,
+        "DOOR APPEARED!",
+        "#ffff00"
+      );
+    }
+  }
+
+  checkDoorCollision() {
+    if (!this.door) return;
+
+    // Check if Fireboy reaches the door
+    if (this.door.checkCollision(this.fireboy)) {
+      this.handleDoorWin("fireboy");
+    }
+    // Check if Watergirl reaches the door
+    else if (this.door.checkCollision(this.watergirl)) {
+      this.handleDoorWin("watergirl");
+    }
+  }
+
+  handleDoorWin(winner) {
+    // Add points using global point system
+    if (window.pointSystem) {
+      window.pointSystem.addPoints(winner, 1, "door");
+    }
+
+    // Update local scores
+    if (winner === "fireboy") {
+      this.fireboyScore++;
+    } else {
+      this.watergirlScore++;
+    }
+
+    // Play win sound
+    this.playSound(800, 1.0, "sine");
+
+    // Add visual effects
+    this.addEffect(this.door.x + 30, this.door.y + 30, "goal");
+    this.addTextEffect(
+      this.door.x + 30,
+      this.door.y - 20,
+      `${winner.toUpperCase()} WINS!`,
+      winner === "fireboy" ? "#ff6b35" : "#4a90e2"
+    );
+
+    // Reset door
+    this.door = null;
+    this.doorActive = false;
+    this.doorCountdown = 0;
+    this.doorSpawnDelay = 30000 + Math.random() * 30000; // Reset for next door
+
+    // Update UI
+    this.updateUI();
+  }
+
+  checkProjectileCollisions() {
+    // Check for projectile vs projectile collisions
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      for (let j = i - 1; j >= 0; j--) {
+        const proj1 = this.projectiles[i];
+        const proj2 = this.projectiles[j];
+
+        // Check if projectiles are different types and colliding
+        if (proj1.type !== proj2.type && proj1.checkCollision(proj2)) {
+          // Create explosion effect at collision point
+          const collisionX = (proj1.x + proj2.x) / 2;
+          const collisionY = (proj1.y + proj2.y) / 2;
+          this.addEffect(collisionX, collisionY, "explosion");
+          this.addTextEffect(
+            collisionX,
+            collisionY - 20,
+            "BLOCKED!",
+            "#ffff00"
+          );
+
+          // Play collision sound
+          this.playSound(300, 0.3, "square");
+
+          // Add points for successful defense (optional)
+          if (window.pointSystem) {
+            // Give a small point bonus for defensive play
+            const defender =
+              proj1.type === "fireball" ? "watergirl" : "fireboy";
+            window.pointSystem.addPoints(defender, 0.5, "defense");
+          }
+
+          // Track defense count
+          const defender = proj1.type === "fireball" ? "watergirl" : "fireboy";
+          this.defenseCount[defender]++;
+
+          // Remove both projectiles
+          this.projectiles.splice(i, 1);
+          this.projectiles.splice(j, 1);
+
+          // Break out of inner loop since we modified the array
+          break;
+        }
+      }
+    }
+  }
+
+  checkProjectileNearMisses() {
+    // Check for projectiles that are close to colliding (for visual effects)
+    for (let i = 0; i < this.projectiles.length; i++) {
+      for (let j = i + 1; j < this.projectiles.length; j++) {
+        const proj1 = this.projectiles[i];
+        const proj2 = this.projectiles[j];
+
+        // Check if projectiles are different types and close to each other
+        if (proj1.type !== proj2.type) {
+          const distance = Math.sqrt(
+            Math.pow(proj1.x - proj2.x, 2) + Math.pow(proj1.y - proj2.y, 2)
+          );
+
+          // If projectiles are close but not colliding, add a warning effect
+          if (distance < 30 && distance > 15) {
+            // Add a subtle warning effect between the projectiles
+            const midX = (proj1.x + proj2.x) / 2;
+            const midY = (proj1.y + proj2.y) / 2;
+
+            // Only add effect occasionally to avoid spam
+            if (Math.random() < 0.1) {
+              this.addEffect(midX, midY, "warning");
+            }
+          }
+        }
+      }
+    }
+  }
+
   checkCollisions() {
+    // Only check collisions if characters exist
+    if (!this.fireboy || !this.watergirl) return;
+
+    // Projectile vs Projectile collisions (defense system)
+    this.checkProjectileCollisions();
+    this.checkProjectileNearMisses();
+
     // Projectile vs Character collisions
     this.projectiles.forEach((projectile, projIndex) => {
       if (
@@ -383,11 +617,23 @@ class Game {
       if (this.fireboy.checkCollision(powerUp)) {
         powerUp.apply(this.fireboy);
         this.addEffect(powerUp.x, powerUp.y, "powerup");
+        this.addTextEffect(
+          powerUp.x,
+          powerUp.y - 20,
+          `+${powerUp.type.toUpperCase()}`,
+          "#ff6b35"
+        );
         this.playSound(400, 0.3, "square");
         this.powerUps.splice(index, 1);
       } else if (this.watergirl.checkCollision(powerUp)) {
         powerUp.apply(this.watergirl);
         this.addEffect(powerUp.x, powerUp.y, "powerup");
+        this.addTextEffect(
+          powerUp.x,
+          powerUp.y - 20,
+          `+${powerUp.type.toUpperCase()}`,
+          "#4a90e2"
+        );
         this.playSound(400, 0.3, "square");
         this.powerUps.splice(index, 1);
       }
@@ -404,6 +650,9 @@ class Game {
   }
 
   checkWinConditions() {
+    // Only check win conditions if characters exist
+    if (!this.fireboy || !this.watergirl) return;
+
     if (this.gameMode === "competitive") {
       if (this.fireboy.health <= 0) {
         this.watergirlScore++;
@@ -465,15 +714,25 @@ class Game {
     // Draw projectiles
     this.projectiles.forEach((projectile) => projectile.render(this.ctx));
 
-    // Draw characters
-    this.fireboy.render(this.ctx);
-    this.watergirl.render(this.ctx);
+    // Draw door
+    if (this.door) {
+      this.door.render(this.ctx);
+    }
+
+    // Draw characters (only if they exist)
+    if (this.fireboy) {
+      this.fireboy.render(this.ctx);
+    }
+    if (this.watergirl) {
+      this.watergirl.render(this.ctx);
+    }
 
     // Draw effects
     this.effects.forEach((effect) => effect.render(this.ctx));
 
     // Draw UI elements
     this.drawHealthBars();
+    this.drawDoorUI();
   }
 
   drawLoadingScreen() {
@@ -539,6 +798,9 @@ class Game {
   }
 
   drawHealthBars() {
+    // Only draw health bars if characters exist
+    if (!this.fireboy || !this.watergirl) return;
+
     // Fireboy health bar background
     this.ctx.fillStyle = "#333";
     this.ctx.fillRect(18, 18, 204, 24);
@@ -597,6 +859,66 @@ class Game {
     this.ctx.font = "bold 12px Arial";
     this.ctx.textAlign = "right";
     this.ctx.fillText("Watergirl", this.width - 20, 16);
+    this.ctx.textAlign = "left";
+  }
+
+  drawDoorUI() {
+    // Draw door countdown
+    if (this.doorActive) {
+      const timeLeft = Math.ceil(this.doorCountdown / 1000);
+      this.ctx.fillStyle = "#ffff00";
+      this.ctx.font = "bold 24px Arial";
+      this.ctx.textAlign = "center";
+      this.ctx.strokeStyle = "#000";
+      this.ctx.lineWidth = 3;
+      this.ctx.strokeText(`DOOR: ${timeLeft}s`, this.width / 2, 60);
+      this.ctx.fillText(`DOOR: ${timeLeft}s`, this.width / 2, 60);
+    } else if (!this.door) {
+      const timeUntilDoor = Math.ceil(
+        (this.doorSpawnDelay - (Date.now() - this.gameStartTime)) / 1000
+      );
+      if (timeUntilDoor > 0) {
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.font = "bold 18px Arial";
+        this.ctx.textAlign = "center";
+        this.ctx.strokeStyle = "#000";
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeText(
+          `Next door in: ${timeUntilDoor}s`,
+          this.width / 2,
+          60
+        );
+        this.ctx.fillText(
+          `Next door in: ${timeUntilDoor}s`,
+          this.width / 2,
+          60
+        );
+      }
+    }
+
+    // Draw global points if available
+    if (window.pointSystem) {
+      const leaderboard = window.pointSystem.getLeaderboard();
+      this.ctx.fillStyle = "#fff";
+      this.ctx.font = "bold 14px Arial";
+      this.ctx.textAlign = "left";
+      this.ctx.fillText(
+        `Global Points - Fireboy: ${leaderboard.fireboy.totalPoints} | Watergirl: ${leaderboard.watergirl.totalPoints}`,
+        20,
+        this.height - 20
+      );
+    }
+
+    // Draw defense counts
+    this.ctx.fillStyle = "#ffff00";
+    this.ctx.font = "bold 12px Arial";
+    this.ctx.textAlign = "left";
+    this.ctx.fillText(
+      `Defense - Fireboy: ${this.defenseCount.fireboy} | Watergirl: ${this.defenseCount.watergirl}`,
+      20,
+      this.height - 40
+    );
+
     this.ctx.textAlign = "left";
   }
 
@@ -872,9 +1194,10 @@ class Projectile {
     this.type = type;
     this.direction = direction;
     this.speed = 300;
-    this.width = 10;
-    this.height = 10;
+    this.width = 12; // Slightly larger for easier collision
+    this.height = 12;
     this.velocityX = this.speed * direction;
+    this.collisionRadius = 8; // Collision detection radius
   }
 
   update(deltaTime) {
@@ -883,6 +1206,14 @@ class Projectile {
 
   isOffScreen(width, height) {
     return this.x < 0 || this.x > width || this.y < 0 || this.y > height;
+  }
+
+  checkCollision(other) {
+    // Use circular collision detection for more accurate projectile collisions
+    const distance = Math.sqrt(
+      Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2)
+    );
+    return distance < this.collisionRadius + other.collisionRadius;
   }
 
   render(ctx) {
@@ -958,12 +1289,21 @@ class PowerUp {
     switch (this.type) {
       case "health":
         character.health = Math.min(character.maxHealth, character.health + 30);
+        console.log(
+          `${character.type} gained health! New health: ${character.health}`
+        );
         break;
       case "speed":
         character.speed += 50;
+        console.log(
+          `${character.type} gained speed! New speed: ${character.speed}`
+        );
         break;
       case "power":
         character.shootCooldown = Math.max(200, character.shootCooldown - 100);
+        console.log(
+          `${character.type} gained power! New cooldown: ${character.shootCooldown}ms`
+        );
         break;
     }
     this.collected = true;
@@ -1384,6 +1724,10 @@ class Effect {
       this.radius += 30 * deltaTime;
     } else if (this.type === "goal") {
       this.radius += 40 * deltaTime;
+    } else if (this.type === "explosion") {
+      this.radius += 80 * deltaTime;
+    } else if (this.type === "warning") {
+      this.radius += 20 * deltaTime;
     }
   }
 
@@ -1410,9 +1754,177 @@ class Effect {
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
+    } else if (this.type === "explosion") {
+      // Create a multi-colored explosion effect
+      const gradient = ctx.createRadialGradient(
+        this.x,
+        this.y,
+        0,
+        this.x,
+        this.y,
+        this.radius
+      );
+      gradient.addColorStop(0, "#ffff00");
+      gradient.addColorStop(0.3, "#ff6600");
+      gradient.addColorStop(0.6, "#ff0000");
+      gradient.addColorStop(1, "#660000");
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Add some spark effects
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const sparkX = this.x + Math.cos(angle) * this.radius * 0.7;
+        const sparkY = this.y + Math.sin(angle) * this.radius * 0.7;
+        ctx.fillRect(sparkX - 1, sparkY - 1, 2, 2);
+      }
+    } else if (this.type === "warning") {
+      // Create a pulsing warning effect
+      ctx.strokeStyle = "#ffff00";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     ctx.restore();
+  }
+}
+
+// TextEffect class for floating text
+class TextEffect {
+  constructor(x, y, text, color, duration) {
+    this.x = x;
+    this.y = y;
+    this.text = text;
+    this.color = color;
+    this.duration = duration;
+    this.startTime = Date.now();
+    this.alpha = 1;
+    this.velocityY = -50; // Move upward
+  }
+
+  update(deltaTime) {
+    const elapsed = Date.now() - this.startTime;
+    this.alpha = 1 - elapsed / this.duration;
+    this.y += this.velocityY * deltaTime;
+  }
+
+  isFinished() {
+    return Date.now() - this.startTime >= this.duration;
+  }
+
+  render(ctx) {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.fillStyle = this.color;
+    ctx.font = "bold 16px Arial";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+
+    // Draw text with outline
+    ctx.strokeText(this.text, this.x, this.y);
+    ctx.fillText(this.text, this.x, this.y);
+
+    ctx.restore();
+  }
+}
+
+// Door class for the door system
+class Door {
+  constructor(x, y, sprite) {
+    this.x = x;
+    this.y = y;
+    this.width = 60;
+    this.height = 60;
+    this.sprite = sprite;
+    this.glowIntensity = 0;
+    this.glowDirection = 1;
+  }
+
+  update(deltaTime) {
+    // Animate glow effect
+    this.glowIntensity += this.glowDirection * deltaTime * 0.002;
+    if (this.glowIntensity >= 1) {
+      this.glowIntensity = 1;
+      this.glowDirection = -1;
+    } else if (this.glowIntensity <= 0) {
+      this.glowIntensity = 0;
+      this.glowDirection = 1;
+    }
+  }
+
+  render(ctx) {
+    ctx.save();
+
+    // Draw glow effect
+    if (this.glowIntensity > 0) {
+      ctx.shadowColor = "#ffff00";
+      ctx.shadowBlur = 20 * this.glowIntensity;
+    }
+
+    // Draw door sprite or fallback rectangle
+    if (this.sprite) {
+      ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+    } else {
+      // Fallback door design
+      const gradient = ctx.createLinearGradient(
+        this.x,
+        this.y,
+        this.x + this.width,
+        this.y + this.height
+      );
+      gradient.addColorStop(0, "#8B4513");
+      gradient.addColorStop(0.5, "#A0522D");
+      gradient.addColorStop(1, "#654321");
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+
+      // Door frame
+      ctx.strokeStyle = "#654321";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+      // Door handle
+      ctx.fillStyle = "#FFD700";
+      ctx.beginPath();
+      ctx.arc(
+        this.x + this.width - 15,
+        this.y + this.height / 2,
+        5,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+
+    // Draw "DOOR" text above
+    ctx.fillStyle = "#ffff00";
+    ctx.font = "bold 12px Arial";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.strokeText("DOOR", this.x + this.width / 2, this.y - 5);
+    ctx.fillText("DOOR", this.x + this.width / 2, this.y - 5);
+
+    ctx.restore();
+  }
+
+  checkCollision(other) {
+    return (
+      this.x < other.x + other.width &&
+      this.x + this.width > other.x &&
+      this.y < other.y + other.height &&
+      this.y + this.height > other.y
+    );
   }
 }
 
