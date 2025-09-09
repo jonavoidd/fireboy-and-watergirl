@@ -5,9 +5,347 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fireboy vs Watergirl - Battle Arena</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Main Menu Styles */
+      @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+      
+      .screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .screen.hidden {
+        display: none;
+      }
+
+      #mainMenu {
+        font-family: 'MedievalSharp', cursive;
+        background: #0a0a0a;
+        color: #d4af37;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Animated dungeon background */
+      .dungeon-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)),
+          repeating-linear-gradient(
+            90deg,
+            #1a1a1a 0px,
+            #2a2a2a 20px,
+            #1a1a1a 40px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            #1a1a1a 0px,
+            #2a2a2a 20px,
+            #1a1a1a 40px
+          );
+        animation: dungeonPulse 10s ease-in-out infinite;
+      }
+
+      @keyframes dungeonPulse {
+        0%, 100% { filter: brightness(0.8); }
+        50% { filter: brightness(1.2); }
+      }
+
+      /* Torch effects */
+      .torch {
+        position: absolute;
+        width: 60px;
+        height: 120px;
+      }
+
+      .torch-left {
+        top: 20%;
+        left: 5%;
+      }
+
+      .torch-right {
+        top: 20%;
+        right: 5%;
+      }
+
+      .flame {
+        width: 40px;
+        height: 60px;
+        margin: 0 auto;
+        background: radial-gradient(ellipse at bottom, #ff6b35, #ff8c42, transparent);
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        animation: flicker 1.5s ease-in-out infinite;
+        filter: blur(2px);
+        box-shadow: 0 0 40px #ff6b35, 0 0 80px #ff8c42;
+      }
+
+      @keyframes flicker {
+        0%, 100% { 
+          transform: scale(1) rotate(-2deg); 
+          filter: blur(2px) brightness(1);
+        }
+        25% { 
+          transform: scale(1.1) rotate(2deg); 
+          filter: blur(1px) brightness(1.3);
+        }
+        50% { 
+          transform: scale(0.95) rotate(-1deg); 
+          filter: blur(3px) brightness(0.9);
+        }
+        75% { 
+          transform: scale(1.05) rotate(1deg); 
+          filter: blur(2px) brightness(1.1);
+        }
+      }
+
+      .torch-holder {
+        width: 30px;
+        height: 60px;
+        background: linear-gradient(#654321, #8B4513);
+        margin: 0 auto;
+        border: 2px solid #4a3020;
+      }
+
+      /* Main container */
+      .main-container {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        animation: fadeIn 2s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Title styling */
+      .game-title {
+        text-align: center;
+        margin-bottom: 50px;
+        position: relative;
+      }
+
+      .title-main {
+        font-size: 4em;
+        background: linear-gradient(45deg, #ff6b35, #4a90e2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 30px rgba(255, 107, 53, 0.5), 0 0 60px rgba(74, 144, 226, 0.5);
+        animation: titleGlow 3s ease-in-out infinite;
+        letter-spacing: 3px;
+      }
+
+      @keyframes titleGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.3); }
+      }
+
+      .title-sub {
+        font-size: 1.5em;
+        color: #8B7355;
+        margin-top: 10px;
+        letter-spacing: 5px;
+      }
+
+      /* Menu buttons */
+      .menu-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 300px;
+      }
+
+      .menu-btn {
+        background: linear-gradient(135deg, #2c1810, #4a2818);
+        border: 3px solid #d4af37;
+        color: #d4af37;
+        padding: 15px 30px;
+        font-size: 1.3em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        box-shadow: 
+          inset 0 0 20px rgba(0,0,0,0.5),
+          0 5px 15px rgba(0,0,0,0.8);
+      }
+
+      .menu-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+        transition: left 0.5s ease;
+      }
+
+      .menu-btn:hover::before {
+        left: 100%;
+      }
+
+      .menu-btn:hover {
+        background: linear-gradient(135deg, #4a2818, #6a3828);
+        transform: translateY(-2px);
+        box-shadow: 
+          inset 0 0 30px rgba(212, 175, 55, 0.2),
+          0 8px 20px rgba(0,0,0,0.9);
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+      }
+
+      .menu-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Character sprites */
+      .characters {
+        position: absolute;
+        bottom: 10%;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 10%;
+      }
+
+      .character {
+        width: 80px;
+        height: 100px;
+        animation: characterFloat 3s ease-in-out infinite;
+      }
+
+      .character.fireboy {
+        background: linear-gradient(135deg, #ff6b35, #ff8c42);
+        border-radius: 40% 40% 50% 50%;
+        box-shadow: 0 0 30px #ff6b35;
+        animation-delay: 0s;
+      }
+
+      .character.watergirl {
+        background: linear-gradient(135deg, #4a90e2, #87CEEB);
+        border-radius: 40% 40% 50% 50%;
+        box-shadow: 0 0 30px #4a90e2;
+        animation-delay: 1.5s;
+      }
+
+      @keyframes characterFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+      }
+
+      /* Settings and credits */
+      .bottom-buttons {
+        position: absolute;
+        bottom: 20px;
+        display: flex;
+        gap: 20px;
+      }
+
+      .small-btn {
+        background: rgba(42, 24, 16, 0.8);
+        border: 2px solid #8B7355;
+        color: #8B7355;
+        padding: 8px 20px;
+        font-size: 0.9em;
+        font-family: 'MedievalSharp', cursive;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .small-btn:hover {
+        background: rgba(74, 40, 24, 0.9);
+        color: #d4af37;
+        border-color: #d4af37;
+      }
+
+      /* Particle effects */
+      .particle {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: #d4af37;
+        pointer-events: none;
+        border-radius: 50%;
+        animation: float-up 4s linear infinite;
+      }
+
+      @keyframes float-up {
+        0% {
+          transform: translateY(100vh) translateX(0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100vh) translateX(50px);
+          opacity: 0;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="gameContainer">
+    <!-- Main Menu Screen -->
+    <div id="mainMenu" class="screen">
+      <div class="dungeon-bg"></div>
+      
+      <!-- Torches -->
+      <div class="torch torch-left">
+        <div class="flame"></div>
+        <div class="torch-holder"></div>
+      </div>
+      <div class="torch torch-right">
+        <div class="flame"></div>
+        <div class="torch-holder"></div>
+      </div>
+      
+      <div class="main-container">
+        <div class="game-title">
+          <h1 class="title-main">FIREBOY vs WATERGIRL</h1>
+          <p class="title-sub">DUNGEON BATTLES</p>
+        </div>
+        
+        <div class="menu-buttons">
+          <button class="menu-btn" onclick="startGame()">Start Adventure</button>
+          <button class="menu-btn" onclick="selectMap()">Select Map</button>
+          <button class="menu-btn" onclick="showInstructions()">How to Play</button>
+          <button class="menu-btn" onclick="showLeaderboard()">Leaderboard</button>
+        </div>
+        
+        <div class="bottom-buttons">
+          <button class="small-btn" onclick="showSettings()">Settings</button>
+          <button class="small-btn" onclick="showCredits()">Credits</button>
+        </div>
+      </div>
+      
+      <div class="characters">
+        <div class="character fireboy"></div>
+        <div class="character watergirl"></div>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameContainer" class="screen hidden">
       <div id="gameHeader">
         <h1>Fireboy vs Watergirl</h1>
         <div id="gameInfo">
@@ -62,5 +400,86 @@
 
     <script src="pointSystem.js"></script>
     <script src="game.js"></script>
+    
+    <script>
+      // Main Menu Functions
+      function createParticle() {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * window.innerWidth + 'px';
+        particle.style.animationDelay = Math.random() * 4 + 's';
+        particle.style.animationDuration = (4 + Math.random() * 2) + 's';
+        document.body.appendChild(particle);
+        
+        setTimeout(() => {
+          particle.remove();
+        }, 6000);
+      }
+      
+      // Create particles periodically
+      setInterval(createParticle, 300);
+      
+      // Menu functions
+      function startGame() {
+        // Hide main menu and show game
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('gameContainer').classList.remove('hidden');
+        
+        // Initialize the game if not already initialized
+        if (!window.game) {
+          window.game = new Game();
+        } else {
+          // Reset game state
+          window.game.currentLevel = 1;
+          window.game.fireboyScore = 0;
+          window.game.watergirlScore = 0;
+          window.game.createLevel(window.game.currentLevel);
+          window.game.gameState = "playing";
+        }
+      }
+      
+      function selectMap() {
+        // Check if map-selection.html exists, otherwise show alert
+        if (document.querySelector('a[href="map-selection.html"]')) {
+          window.location.href = 'map-selection.html';
+        } else {
+          alert('Map selection coming soon! For now, use "Start Adventure" to begin the game.');
+        }
+      }
+      
+      function showInstructions() {
+        alert('CONTROLS:\n\nFireboy:\n• WASD to move\n• Space to shoot fireball\n• Shift for Ultimate (after 5 defenses)\n• Q for Defense Barrier (5s duration, 10s cooldown)\n\nWatergirl:\n• Arrow Keys to move\n• Enter to shoot waterball\n• Shift for Ultimate (after 5 defenses)\n• P for Defense Barrier (5s duration, 10s cooldown)\n\nOBJECTIVE:\n• Collect power-ups and defeat enemies\n• Reach the doors before your opponent!\n• Block enemy projectiles to build ultimate power\n• Use defense barriers strategically!\n\nGAME FEATURES:\n• Door System: Doors spawn every 15-30 seconds\n• Defense System: Block projectiles to gain ultimate abilities\n• Ultimate Attacks: Powerful attacks after 5 successful defenses\n• Defense Barriers: Create temporary shields with Q/P keys\n• Point System: Track your progress and compete!');
+      }
+      
+      function showLeaderboard() {
+        // Try to load scores from localStorage
+        try {
+          const savedProgress = localStorage.getItem('fireboyWatergirlPoints');
+          if (savedProgress) {
+            const data = JSON.parse(savedProgress);
+            alert(`LEADERBOARD\n\n🔥 Fireboy\nTotal Points: ${data.fireboyPoints || 0}\nDoor Wins: ${data.doorWins?.fireboy || 0}\n\n💧 Watergirl\nTotal Points: ${data.watergirlPoints || 0}\nDoor Wins: ${data.doorWins?.watergirl || 0}\n\nTotal Rounds: ${data.totalRounds || 0}`);
+          } else {
+            alert('No scores yet! Play some games first!');
+          }
+        } catch (e) {
+          alert('No scores yet! Play some games first!');
+        }
+      }
+      
+      function showSettings() {
+        alert('SETTINGS\n\nSound: ON ✓\nMusic: ON ✓\nParticles: ON ✓\n\n(Settings menu coming soon!)');
+      }
+      
+      function showCredits() {
+        alert('FIREBOY VS WATERGIRL\nDungeon Battles\n\nA competitive twist on the classic game!\n\nCreated with:\n• HTML5 Canvas\n• CSS3 Animations\n• Vanilla JavaScript\n• Enhanced Combat System\n• Door & Defense Mechanics\n• Defense Barriers\n\nThank you for playing!');
+      }
+      
+      // Initialize main menu on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        // Show main menu by default
+        document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('gameContainer').classList.add('hidden');
+      });
+    </script>
   </body>
 </html>
