@@ -54,24 +54,7 @@
             justify-content: center;
         }
 
-        /* Canvas for drawing paths */
-        #pathCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            z-index: 5;
-            animation: pathGlow 3s ease-in-out infinite;
-        }
-
-        @keyframes pathGlow {
-            0%, 100% { 
-                filter: brightness(1) drop-shadow(0 0 5px rgba(212, 175, 55, 0.3));
-            }
-            50% { 
-                filter: brightness(1.2) drop-shadow(0 0 15px rgba(212, 175, 55, 0.6));
-            }
-        }
+        /* Canvas for drawing paths - REMOVED */
 
         /* Level nodes container */
         .levels-grid {
@@ -341,7 +324,6 @@
     </div>
     
     <div class="map-container">
-        <canvas id="pathCanvas"></canvas>
         <div class="levels-grid" id="levelsGrid"></div>
     </div>
     
@@ -360,6 +342,7 @@
         </div>
     </div>
     
+    <script src="settings.js"></script>
     <script>
         // Level data
         const levels = [
@@ -425,13 +408,7 @@
             }
         ];
         
-        // Path connections between levels (using array indices)
-        const paths = [
-            { from: 0, to: 1 }, // Level 1 to Level 2
-            { from: 1, to: 2 }, // Level 2 to Level 3
-            { from: 2, to: 3 }, // Level 3 to Level 4
-            { from: 3, to: 4 }  // Level 4 to Level 5
-        ];
+        // Path connections removed - no connecting lines
         
         // Load progress from localStorage
         function loadProgress() {
@@ -462,75 +439,7 @@
             localStorage.setItem('levelProgress', JSON.stringify(progress));
         }
         
-        // Draw paths between levels
-        function drawPaths() {
-            const canvas = document.getElementById('pathCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw connecting paths
-            ctx.strokeStyle = '#d4af37';
-            ctx.lineWidth = 6;
-            
-            // Animated dashed line effect
-            const time = Date.now() * 0.001;
-            const dashOffset = (time * 50) % 25; // Animate the dash pattern
-            ctx.setLineDash([15, 10]);
-            ctx.lineDashOffset = dashOffset;
-            ctx.lineCap = 'round';
-            
-            // Add glow effect
-            ctx.shadowColor = '#d4af37';
-            ctx.shadowBlur = 10;
-            
-            paths.forEach((path, index) => {
-                const fromLevel = levels[path.from];
-                const toLevel = levels[path.to];
-                
-                // Only draw path if from level is unlocked
-                if (fromLevel.unlocked) {
-                    ctx.beginPath();
-                    ctx.moveTo(fromLevel.x + 40, fromLevel.y + 40);
-                    
-                    // Create smooth curved path
-                    const midX = (fromLevel.x + toLevel.x) / 2;
-                    const midY = (fromLevel.y + toLevel.y) / 2;
-                    
-                    // Calculate control points for smooth curves
-                    const controlX1 = fromLevel.x + (midX - fromLevel.x) * 0.5;
-                    const controlY1 = fromLevel.y + (midY - fromLevel.y) * 0.3;
-                    const controlX2 = toLevel.x - (toLevel.x - midX) * 0.5;
-                    const controlY2 = toLevel.y - (toLevel.y - midY) * 0.3;
-                    
-                    ctx.bezierCurveTo(
-                        controlX1, controlY1,
-                        controlX2, controlY2,
-                        toLevel.x + 40, toLevel.y + 40
-                    );
-                    ctx.stroke();
-                }
-            });
-            
-            // Reset shadow
-            ctx.shadowBlur = 0;
-            
-            // Draw path nodes (small circles at connection points)
-            ctx.fillStyle = '#d4af37';
-            ctx.setLineDash([]);
-            
-            levels.forEach((level, index) => {
-                if (index > 0) { // Don't draw node for first level
-                    ctx.beginPath();
-                    ctx.arc(level.x + 40, level.y + 40, 4, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-        }
+        // Path drawing function removed - no connecting lines
         
         // Create level nodes
         function createLevelNodes() {
@@ -582,11 +491,6 @@
             });
             
             updateProgress();
-            
-            // Redraw paths after creating nodes
-            setTimeout(() => {
-                drawPaths();
-            }, 100);
         }
         
         // Get current level (first uncompleted level)
@@ -649,27 +553,13 @@
                 }
                 saveProgress();
                 createLevelNodes();
-                drawPaths(); // Redraw paths to show new connections
             }
         };
-        
-        // Animation loop for paths
-        function animatePaths() {
-            drawPaths();
-            requestAnimationFrame(animatePaths);
-        }
         
         // Initialize
         window.addEventListener('load', () => {
             loadProgress();
             createLevelNodes();
-            drawPaths();
-            animatePaths(); // Start animation loop
-        });
-        
-        // Redraw paths on resize
-        window.addEventListener('resize', () => {
-            drawPaths();
         });
     </script>
 </body>

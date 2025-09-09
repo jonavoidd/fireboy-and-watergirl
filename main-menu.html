@@ -133,6 +133,7 @@
         .title-main {
             font-size: 4em;
             background: linear-gradient(45deg, #ff6b35, #4a90e2);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 30px rgba(255, 107, 53, 0.5), 0 0 60px rgba(74, 144, 226, 0.5);
@@ -293,6 +294,8 @@
                 opacity: 0;
             }
         }
+
+
     </style>
 </head>
 <body>
@@ -318,7 +321,6 @@
             <button class="menu-btn" onclick="startGame()">Start Adventure</button>
             <button class="menu-btn" onclick="selectMap()">Select Map</button>
             <button class="menu-btn" onclick="showInstructions()">How to Play</button>
-            <button class="menu-btn" onclick="showLeaderboard()">Leaderboard</button>
         </div>
         
         <div class="bottom-buttons">
@@ -331,7 +333,10 @@
         <div class="character fireboy"></div>
         <div class="character watergirl"></div>
     </div>
+
+
     
+    <script src="settings.js"></script>
     <script>
         // Create floating particles
         function createParticle() {
@@ -381,11 +386,11 @@
         }
         
         function showSettings() {
-            alert('SETTINGS\n\nSound: ON ✓\nMusic: ON ✓\nParticles: ON ✓\n\n(Settings menu coming soon!)');
+            window.location.href = 'settings.html';
         }
-        
+
         function showCredits() {
-            alert('FIREBOY VS WATERGIRL\nDungeon Battles\n\nA competitive twist on the classic game!\n\nCreated with:\n• HTML5 Canvas\n• CSS3 Animations\n• Vanilla JavaScript\n\nThank you for playing!');
+            window.location.href = 'credits.html';
         }
     </script>
 </body>
