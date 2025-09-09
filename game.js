@@ -38,6 +38,14 @@ class Game {
       fireboy: 0,
       watergirl: 0,
     };
+    this.ultimateReady = {
+      fireboy: false,
+      watergirl: false,
+    };
+    this.ultimateCooldown = {
+      fireboy: 0,
+      watergirl: 0,
+    };
 
     // Sound effects (using Web Audio API)
     this.audioContext = null;
@@ -188,10 +196,19 @@ class Game {
     this.doorActive = false;
     this.doorCountdown = 0;
     this.gameStartTime = Date.now();
-    this.doorSpawnDelay = 30000 + Math.random() * 30000; // 30-60 seconds
+    this.doorSpawnDelay = 15000 + Math.random() * 15000; // 15-30 seconds
 
     // Reset defense counts
     this.defenseCount = {
+      fireboy: 0,
+      watergirl: 0,
+    };
+    // Reset ultimate skills
+    this.ultimateReady = {
+      fireboy: false,
+      watergirl: false,
+    };
+    this.ultimateCooldown = {
       fireboy: 0,
       watergirl: 0,
     };
@@ -368,6 +385,9 @@ class Game {
     // Update door system
     this.updateDoorSystem(deltaTime);
 
+    // Update ultimate skill cooldowns
+    this.updateUltimateCooldowns(deltaTime);
+
     // Update characters (only if they exist)
     if (this.fireboy) {
       this.fireboy.update(deltaTime, this.keys, this.platforms);
@@ -502,10 +522,28 @@ class Game {
     this.door = null;
     this.doorActive = false;
     this.doorCountdown = 0;
-    this.doorSpawnDelay = 30000 + Math.random() * 30000; // Reset for next door
+    this.doorSpawnDelay = 15000 + Math.random() * 15000; // Reset for next door
 
     // Update UI
     this.updateUI();
+  }
+
+  updateUltimateCooldowns(deltaTime) {
+    // Update ultimate cooldowns
+    if (this.ultimateCooldown.fireboy > 0) {
+      this.ultimateCooldown.fireboy -= deltaTime;
+      if (this.ultimateCooldown.fireboy <= 0) {
+        this.ultimateCooldown.fireboy = 0;
+        this.ultimateReady.fireboy = false;
+      }
+    }
+    if (this.ultimateCooldown.watergirl > 0) {
+      this.ultimateCooldown.watergirl -= deltaTime;
+      if (this.ultimateCooldown.watergirl <= 0) {
+        this.ultimateCooldown.watergirl = 0;
+        this.ultimateReady.watergirl = false;
+      }
+    }
   }
 
   checkProjectileCollisions() {
@@ -542,6 +580,24 @@ class Game {
           // Track defense count
           const defender = proj1.type === "fireball" ? "watergirl" : "fireboy";
           this.defenseCount[defender]++;
+
+          // Check if ultimate skill is ready
+          if (
+            this.defenseCount[defender] >= 5 &&
+            !this.ultimateReady[defender]
+          ) {
+            this.ultimateReady[defender] = true;
+            this.addTextEffect(
+              this.fireboy.x +
+                (defender === "fireboy"
+                  ? 0
+                  : this.watergirl.x - this.fireboy.x),
+              this.fireboy.y - 50,
+              `${defender.toUpperCase()} ULTIMATE READY!`,
+              defender === "fireboy" ? "#ff6b35" : "#4a90e2"
+            );
+            this.playSound(400, 0.8, "triangle");
+          }
 
           // Remove both projectiles
           this.projectiles.splice(i, 1);
@@ -597,17 +653,43 @@ class Game {
         projectile.type === "fireball" &&
         this.watergirl.checkCollision(projectile)
       ) {
-        this.watergirl.takeDamage(20);
+        const damage = projectile.damage || 20; // Use ultimate damage if available
+        this.watergirl.takeDamage(damage);
         this.addEffect(this.watergirl.x, this.watergirl.y, "hit");
         this.playSound(200, 0.2, "sawtooth");
+
+        // Add special effect for ultimate hits
+        if (projectile.damage > 20) {
+          this.addTextEffect(
+            this.watergirl.x,
+            this.watergirl.y - 30,
+            "ULTIMATE HIT!",
+            "#ff0000"
+          );
+          this.addEffect(this.watergirl.x, this.watergirl.y, "explosion");
+        }
+
         this.projectiles.splice(projIndex, 1);
       } else if (
         projectile.type === "waterball" &&
         this.fireboy.checkCollision(projectile)
       ) {
-        this.fireboy.takeDamage(20);
+        const damage = projectile.damage || 20; // Use ultimate damage if available
+        this.fireboy.takeDamage(damage);
         this.addEffect(this.fireboy.x, this.fireboy.y, "hit");
         this.playSound(200, 0.2, "sawtooth");
+
+        // Add special effect for ultimate hits
+        if (projectile.damage > 20) {
+          this.addTextEffect(
+            this.fireboy.x,
+            this.fireboy.y - 30,
+            "ULTIMATE HIT!",
+            "#ff0000"
+          );
+          this.addEffect(this.fireboy.x, this.fireboy.y, "explosion");
+        }
+
         this.projectiles.splice(projIndex, 1);
       }
     });
@@ -919,7 +1001,82 @@ class Game {
       this.height - 40
     );
 
+    // Draw ultimate skill indicators
+    this.drawUltimateIndicators();
+
     this.ctx.textAlign = "left";
+  }
+
+  drawUltimateIndicators() {
+    // Fireboy ultimate indicator
+    const fireboyX = 20;
+    const fireboyY = 100;
+    const fireboyProgress = Math.min(this.defenseCount.fireboy / 5, 1);
+
+    // Background
+    this.ctx.fillStyle = "#333";
+    this.ctx.fillRect(fireboyX, fireboyY, 200, 20);
+
+    // Progress bar
+    this.ctx.fillStyle = fireboyProgress >= 1 ? "#ff6b35" : "#ffaa66";
+    this.ctx.fillRect(fireboyX, fireboyY, 200 * fireboyProgress, 20);
+
+    // Border
+    this.ctx.strokeStyle = "#fff";
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(fireboyX, fireboyY, 200, 20);
+
+    // Text
+    this.ctx.fillStyle = "#fff";
+    this.ctx.font = "bold 12px Arial";
+    this.ctx.textAlign = "center";
+    this.ctx.fillText(
+      `Fireboy Ultimate: ${this.defenseCount.fireboy}/5`,
+      fireboyX + 100,
+      fireboyY + 14
+    );
+
+    // Ready indicator
+    if (this.ultimateReady.fireboy) {
+      this.ctx.fillStyle = "#ffff00";
+      this.ctx.font = "bold 14px Arial";
+      this.ctx.fillText("READY! (Shift)", fireboyX + 100, fireboyY - 5);
+    }
+
+    // Watergirl ultimate indicator
+    const watergirlX = this.width - 220;
+    const watergirlY = 100;
+    const watergirlProgress = Math.min(this.defenseCount.watergirl / 5, 1);
+
+    // Background
+    this.ctx.fillStyle = "#333";
+    this.ctx.fillRect(watergirlX, watergirlY, 200, 20);
+
+    // Progress bar
+    this.ctx.fillStyle = watergirlProgress >= 1 ? "#4a90e2" : "#87ceeb";
+    this.ctx.fillRect(watergirlX, watergirlY, 200 * watergirlProgress, 20);
+
+    // Border
+    this.ctx.strokeStyle = "#fff";
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(watergirlX, watergirlY, 200, 20);
+
+    // Text
+    this.ctx.fillStyle = "#fff";
+    this.ctx.font = "bold 12px Arial";
+    this.ctx.textAlign = "center";
+    this.ctx.fillText(
+      `Watergirl Ultimate: ${this.defenseCount.watergirl}/5`,
+      watergirlX + 100,
+      watergirlY + 14
+    );
+
+    // Ready indicator
+    if (this.ultimateReady.watergirl) {
+      this.ctx.fillStyle = "#ffff00";
+      this.ctx.font = "bold 14px Arial";
+      this.ctx.fillText("READY! (Shift)", watergirlX + 100, watergirlY - 5);
+    }
   }
 
   updateUI() {
@@ -1035,6 +1192,27 @@ class Character {
     }
   }
 
+  shootUltimate(projectileType, game) {
+    const currentTime = Date.now();
+    if (currentTime - this.lastShot > this.shootCooldown) {
+      const projectile = new UltimateProjectile(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        projectileType,
+        this.facingRight ? 1 : -1
+      );
+      game.projectiles.push(projectile);
+      this.lastShot = currentTime;
+
+      // Play ultimate shooting sound
+      if (projectileType === "fireball") {
+        game.playSound(500, 0.8, "triangle");
+      } else {
+        game.playSound(450, 0.8, "sawtooth");
+      }
+    }
+  }
+
   takeDamage(amount) {
     this.health = Math.max(0, this.health - amount);
   }
@@ -1113,6 +1291,12 @@ class Fireboy extends Character {
     if (keys["Space"]) {
       this.shoot("fireball", window.game);
     }
+    // Ultimate shooting
+    if (keys["Shift"] && window.game.ultimateReady.fireboy) {
+      this.shootUltimate("fireball", window.game);
+      window.game.ultimateReady.fireboy = false;
+      window.game.ultimateCooldown.fireboy = 10000; // 10 second cooldown
+    }
   }
 }
 
@@ -1141,6 +1325,157 @@ class Watergirl extends Character {
     // Shooting
     if (keys["Enter"]) {
       this.shoot("waterball", window.game);
+    }
+    // Ultimate shooting
+    if (keys["Shift"] && window.game.ultimateReady.watergirl) {
+      this.shootUltimate("waterball", window.game);
+      window.game.ultimateReady.watergirl = false;
+      window.game.ultimateCooldown.watergirl = 10000; // 10 second cooldown
+    }
+  }
+}
+
+class UltimateProjectile {
+  constructor(x, y, type, direction) {
+    this.x = x;
+    this.y = y;
+    this.type = type;
+    this.direction = direction;
+    this.speed = 400; // Faster than regular projectiles
+    this.width = 20; // Much larger than regular projectiles
+    this.height = 20;
+    this.velocityX = this.speed * direction;
+    this.collisionRadius = 12; // Larger collision radius
+    this.damage = 50; // Much more damage than regular projectiles
+    this.glowIntensity = 0;
+    this.glowDirection = 1;
+  }
+
+  update(deltaTime) {
+    this.x += this.velocityX * deltaTime;
+
+    // Animate glow effect
+    this.glowIntensity += this.glowDirection * deltaTime * 0.003;
+    if (this.glowIntensity >= 1 || this.glowIntensity <= 0) {
+      this.glowDirection *= -1;
+    }
+  }
+
+  isOffScreen(width, height) {
+    return this.x < 0 || this.x > width || this.y < 0 || this.y > height;
+  }
+
+  checkCollision(other) {
+    // Use circular collision detection for more accurate projectile collisions
+    const distance = Math.sqrt(
+      Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2)
+    );
+    return distance < this.collisionRadius + other.collisionRadius;
+  }
+
+  render(ctx) {
+    if (this.type === "fireball") {
+      // Create a massive fireball with enhanced effects
+      const gradient = ctx.createRadialGradient(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        0,
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 2
+      );
+      gradient.addColorStop(0, "#ffff00");
+      gradient.addColorStop(0.3, "#ff6600");
+      gradient.addColorStop(0.6, "#ff0000");
+      gradient.addColorStop(1, "#660000");
+
+      // Glow effect
+      ctx.shadowColor = "#ff6600";
+      ctx.shadowBlur = 20 + this.glowIntensity * 10;
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+      // Inner core
+      ctx.shadowBlur = 0;
+      const innerGradient = ctx.createRadialGradient(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        0,
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 4
+      );
+      innerGradient.addColorStop(0, "#ffffff");
+      innerGradient.addColorStop(1, "#ffff00");
+      ctx.fillStyle = innerGradient;
+      ctx.beginPath();
+      ctx.arc(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 4,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    } else {
+      // Create a massive waterball with enhanced effects
+      const gradient = ctx.createRadialGradient(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        0,
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 2
+      );
+      gradient.addColorStop(0, "#ffffff");
+      gradient.addColorStop(0.3, "#4a90e2");
+      gradient.addColorStop(0.6, "#2c5aa0");
+      gradient.addColorStop(1, "#1a3d73");
+
+      // Glow effect
+      ctx.shadowColor = "#4a90e2";
+      ctx.shadowBlur = 20 + this.glowIntensity * 10;
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+      // Inner core
+      ctx.shadowBlur = 0;
+      const innerGradient = ctx.createRadialGradient(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        0,
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 4
+      );
+      innerGradient.addColorStop(0, "#ffffff");
+      innerGradient.addColorStop(1, "#87ceeb");
+      ctx.fillStyle = innerGradient;
+      ctx.beginPath();
+      ctx.arc(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 4,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
     }
   }
 }
