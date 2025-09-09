@@ -34,7 +34,7 @@ class Game {
       fireboy: 0,
       watergirl: 0,
     };
-    this.defenseDuration = 5000; // 5 seconds
+    this.defenseDuration = 3000; // 5 seconds
     this.defenseCooldownTime = 10000; // 10 seconds cooldown
 
     this.fireboyScore = 0;
