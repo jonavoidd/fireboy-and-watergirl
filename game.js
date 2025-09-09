@@ -1602,7 +1602,7 @@ class Game {
     // Start acid rain only for level 2
     if (this.currentLevel === 2) {
       this.acidRainSpawnTimer = 0;
-      this.acidRainSpawnRate = 0.15; // Spawn every 0.15 seconds (much more frequent)
+      this.acidRainSpawnRate = 0.5; // Spawn every 0.15 seconds (much more frequent)
     }
   }
 
