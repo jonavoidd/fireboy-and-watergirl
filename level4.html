@@ -653,7 +653,10 @@
         <div id="gameOverContent">
           <h2 id="gameOverTitle">Game Over</h2>
           <p id="gameOverMessage">Monster Defeated!</p>
-          <button id="restartBtn">Play Again</button>
+          <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+            <button id="restartBtn" class="game-btn">Play Again</button>
+            <button id="backToMapBtn2" class="game-btn">Back to Map</button>
+          </div>
         </div>
       </div>
 
@@ -785,17 +788,26 @@
         updateMonster(deltaTime) {
           if (!this.monster.alive) return;
           
-          // Move monster side to side
+          // Move monster side to side with some randomness
           this.monster.x += this.monster.speed * this.monster.direction;
           
           // Bounce off walls
           if (this.monster.x <= 0 || this.monster.x >= this.width - this.monster.width) {
             this.monster.direction *= -1;
+            // Add some random pause when changing direction
+            this.monster.speed = Math.random() * 2 + 0.5;
           }
           
-          // Attack with projectiles
+          // Occasionally change speed for more dynamic movement
+          if (Math.random() < 0.01) {
+            this.monster.speed = Math.random() * 2 + 0.5;
+          }
+          
+          // Attack with projectiles - more frequent when health is low
           const now = Date.now();
-          if (now - this.monster.lastAttack > this.monster.attackCooldown) {
+          const attackDelay = this.monster.health < 30 ? this.monster.attackCooldown * 0.5 : this.monster.attackCooldown;
+          
+          if (now - this.monster.lastAttack > attackDelay) {
             this.monsterAttack();
             this.monster.lastAttack = now;
           }
@@ -804,7 +816,7 @@
         monsterAttack() {
           if (!this.fireboy || !this.watergirl) return;
           
-          // Shoot at both players
+          // Shoot at both players with some spread
           const targets = [this.fireboy, this.watergirl];
           
           targets.forEach(target => {
@@ -817,6 +829,30 @@
               const vx = (dx / distance) * this.monsterProjectileSpeed;
               const vy = (dy / distance) * this.monsterProjectileSpeed;
               
+              // Add some spread to make it more challenging
+              const spread = 0.3;
+              const spreadVx = vx + (Math.random() - 0.5) * spread;
+              const spreadVy = vy + (Math.random() - 0.5) * spread;
+              
+              this.monster.projectiles.push({
+                x: this.monster.x + this.monster.width / 2,
+                y: this.monster.y + this.monster.height / 2,
+                vx: spreadVx,
+                vy: spreadVy,
+                width: this.monsterProjectileSize,
+                height: this.monsterProjectileSize,
+                type: 'monster'
+              });
+            }
+          });
+          
+          // Occasionally shoot a spread pattern when health is low
+          if (this.monster.health < 50 && Math.random() < 0.3) {
+            for (let i = 0; i < 5; i++) {
+              const angle = (i / 5) * Math.PI * 2;
+              const vx = Math.cos(angle) * this.monsterProjectileSpeed * 0.7;
+              const vy = Math.sin(angle) * this.monsterProjectileSpeed * 0.7;
+              
               this.monster.projectiles.push({
                 x: this.monster.x + this.monster.width / 2,
                 y: this.monster.y + this.monster.height / 2,
@@ -827,7 +863,7 @@
                 type: 'monster'
               });
             }
-          });
+          }
         }
 
         updateMonsterProjectiles(deltaTime) {
@@ -852,7 +888,7 @@
               if (this.checkCollision(projectile, this.monster)) {
                 // Damage monster
                 this.monster.health -= 5;
-                this.monster.projectiles.splice(projIndex, 1);
+                this.projectiles.splice(projIndex, 1);
                 
                 // Visual effect
                 this.addTextEffect(this.monster.x, this.monster.y - 20, "HIT!", "#ff0000");
@@ -917,16 +953,27 @@
           
           if (winner === "cooperative") {
             document.getElementById('gameOverTitle').textContent = "🏆 Monster Defeated!";
+            document.getElementById('gameOverMessage').innerHTML = 
+              "Congratulations! You have successfully defeated the monster!<br>" +
+              "Both Fireboy and Watergirl worked together to achieve victory!<br>" +
+              "<strong>Bonus Points: +200</strong>";
           } else {
             document.getElementById('gameOverTitle').textContent = "💀 Game Over";
+            document.getElementById('gameOverMessage').innerHTML = 
+              "The monster was too powerful!<br>" +
+              "Try again and work together to defeat it!";
           }
           
           // Show appropriate buttons
           document.getElementById('restartBtn').style.display = 'inline-block';
           document.getElementById('nextLevelBtn').style.display = 'none';
-          document.getElementById('backToMapBtn2').style.display = 'inline-block';
           
           document.getElementById('gameOverScreen').classList.remove('hidden');
+          
+          // Add victory effects
+          if (winner === "cooperative") {
+            this.addVictoryEffects();
+          }
           
           // Update points system
           if (window.updatePoints && winner === "cooperative") {
@@ -936,6 +983,20 @@
           // Unlock next level
           if (window.unlockNextLevel && winner === "cooperative") {
             window.unlockNextLevel(4, 3); // 3 stars for completing level 4
+          }
+        }
+        
+        addVictoryEffects() {
+          // Add confetti-like effects
+          for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+              this.addTextEffect(
+                Math.random() * this.width, 
+                Math.random() * this.height, 
+                "VICTORY!", 
+                "#ffd700"
+              );
+            }, i * 100);
           }
         }
 
@@ -985,39 +1046,91 @@
         drawMonster() {
           if (!this.monster.alive) return;
           
-          // Draw monster body
-          this.ctx.fillStyle = '#8B0000';
-          this.ctx.fillRect(this.monster.x, this.monster.y, this.monster.width, this.monster.height);
+          // Add pulsing effect when health is low
+          const pulse = this.monster.health < 30 ? Math.sin(Date.now() * 0.01) * 0.1 + 1 : 1;
+          const scaledWidth = this.monster.width * pulse;
+          const scaledHeight = this.monster.height * pulse;
+          const offsetX = (this.monster.width - scaledWidth) / 2;
+          const offsetY = (this.monster.height - scaledHeight) / 2;
+          
+          // Draw monster shadow
+          this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          this.ctx.fillRect(this.monster.x + 5, this.monster.y + 5, scaledWidth, scaledHeight);
+          
+          // Draw monster body with gradient
+          const gradient = this.ctx.createLinearGradient(
+            this.monster.x, this.monster.y, 
+            this.monster.x + scaledWidth, this.monster.y + scaledHeight
+          );
+          gradient.addColorStop(0, '#8B0000');
+          gradient.addColorStop(0.5, '#DC143C');
+          gradient.addColorStop(1, '#8B0000');
+          
+          this.ctx.fillStyle = gradient;
+          this.ctx.fillRect(this.monster.x + offsetX, this.monster.y + offsetY, scaledWidth, scaledHeight);
           
           // Draw monster details
           this.ctx.fillStyle = '#ff0000';
-          this.ctx.fillRect(this.monster.x + 10, this.monster.y + 10, 20, 20); // Left eye
-          this.ctx.fillRect(this.monster.x + 50, this.monster.y + 10, 20, 20); // Right eye
+          this.ctx.fillRect(this.monster.x + 10 + offsetX, this.monster.y + 10 + offsetY, 20, 20); // Left eye
+          this.ctx.fillRect(this.monster.x + 50 + offsetX, this.monster.y + 10 + offsetY, 20, 20); // Right eye
           
           // Draw monster mouth
           this.ctx.fillStyle = '#000000';
-          this.ctx.fillRect(this.monster.x + 20, this.monster.y + 50, 40, 20);
+          this.ctx.fillRect(this.monster.x + 20 + offsetX, this.monster.y + 50 + offsetY, 40, 20);
+          
+          // Draw monster horns
+          this.ctx.fillStyle = '#4B0000';
+          this.ctx.fillRect(this.monster.x + 15 + offsetX, this.monster.y - 10 + offsetY, 8, 15);
+          this.ctx.fillRect(this.monster.x + 57 + offsetX, this.monster.y - 10 + offsetY, 8, 15);
           
           // Draw health bar above monster
           this.ctx.fillStyle = '#333';
           this.ctx.fillRect(this.monster.x - 10, this.monster.y - 30, this.monster.width + 20, 10);
           
-          this.ctx.fillStyle = '#ff0000';
+          // Health bar with gradient
+          const healthGradient = this.ctx.createLinearGradient(
+            this.monster.x - 10, this.monster.y - 30,
+            this.monster.x + this.monster.width + 10, this.monster.y - 30
+          );
+          healthGradient.addColorStop(0, '#ff0000');
+          healthGradient.addColorStop(0.5, '#ffff00');
+          healthGradient.addColorStop(1, '#00ff00');
+          
+          this.ctx.fillStyle = healthGradient;
           const healthPercent = this.monster.health / this.monster.maxHealth;
           this.ctx.fillRect(this.monster.x - 10, this.monster.y - 30, 
                            (this.monster.width + 20) * healthPercent, 10);
+          
+          // Health bar border
+          this.ctx.strokeStyle = '#fff';
+          this.ctx.lineWidth = 2;
+          this.ctx.strokeRect(this.monster.x - 10, this.monster.y - 30, this.monster.width + 20, 10);
         }
 
         drawMonsterProjectiles() {
           this.monster.projectiles.forEach(projectile => {
-            this.ctx.fillStyle = '#ff0000';
+            // Create gradient for projectile
+            const gradient = this.ctx.createRadialGradient(
+              projectile.x + projectile.width/2, projectile.y + projectile.height/2, 0,
+              projectile.x + projectile.width/2, projectile.y + projectile.height/2, projectile.width/2
+            );
+            gradient.addColorStop(0, '#ff0000');
+            gradient.addColorStop(0.7, '#8B0000');
+            gradient.addColorStop(1, '#4B0000');
+            
+            this.ctx.fillStyle = gradient;
             this.ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
             
             // Add glow effect
             this.ctx.shadowColor = '#ff0000';
-            this.ctx.shadowBlur = 10;
+            this.ctx.shadowBlur = 15;
             this.ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
             this.ctx.shadowBlur = 0;
+            
+            // Add trail effect
+            this.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+            this.ctx.fillRect(projectile.x - projectile.vx * 5, projectile.y - projectile.vy * 5, 
+                            projectile.width * 0.7, projectile.height * 0.7);
           });
         }
       }
@@ -1029,7 +1142,7 @@
         
         // Hide main menu and show game directly
         document.getElementById('mainMenu').classList.add('hidden');
-        document.getElementById('gameScreen').classList.remove('hidden');
+        document.getElementById('gameContainer').classList.remove('hidden');
         
         // Initialize the game properly
         game.createLevel(4);
@@ -1051,7 +1164,7 @@
         // Set up button event listeners
         document.getElementById('startGameBtn').addEventListener('click', () => {
           document.getElementById('mainMenu').classList.add('hidden');
-          document.getElementById('gameScreen').classList.remove('hidden');
+          document.getElementById('gameContainer').classList.remove('hidden');
           
           // Initialize the game properly
           game.createLevel(4);
@@ -1073,6 +1186,10 @@
         
         document.getElementById('backToMapBtn').addEventListener('click', () => {
           window.location.href = 'map-selection.html';
+        });
+        
+        document.getElementById('showInstructionsBtn').addEventListener('click', () => {
+          window.location.href = 'how-to-play.html';
         });
         
         document.getElementById('backToMapBtn2').addEventListener('click', () => {
