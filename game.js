@@ -84,13 +84,14 @@ class Game {
     this.assets = {
       background: null,
       level2Background: null,
+      level3Background: null,
       fireboySprite: null,
       watergirlSprite: null,
       doorSprite: null,
       platformSprite: null,
     };
     this.assetsLoaded = 0;
-    this.totalAssets = 6;
+    this.totalAssets = 7;
 
     this.init();
   }
@@ -119,6 +120,14 @@ class Game {
       this.checkAssetsLoaded();
     };
     this.assets.level2Background.src = "assets/lvl2bg.png";
+
+    // Load level 3 background image
+    this.assets.level3Background = new Image();
+    this.assets.level3Background.onload = () => {
+      this.assetsLoaded++;
+      this.checkAssetsLoaded();
+    };
+    this.assets.level3Background.src = "assets/lvl3bg.png";
 
     // Load Fireboy sprite
     this.assets.fireboySprite = new Image();
@@ -400,10 +409,16 @@ class Game {
   }
 
   setupBossLevel() {
-    this.gameMode = "competitive";
+    this.gameMode = "cooperative";
     document.getElementById("currentMode").textContent = "Boss Battle";
     document.getElementById("objectiveText").textContent =
-      "Defeat the boss first!";
+      "Work together to defeat the boss!";
+
+    // Disable door system for boss level
+    this.door = null;
+    this.doorActive = false;
+    this.doorCountdown = 0;
+    this.doorSpawnDelay = 0;
 
     // Create platforms
     this.platforms = [
@@ -489,8 +504,10 @@ class Game {
     // Don't update physics when tab is not visible to prevent glitches
     if (!this.isTabVisible) return;
 
-    // Update door system
-    this.updateDoorSystem(deltaTime);
+    // Update door system (skip for level 3 - boss battle)
+    if (this.currentLevel !== 3) {
+      this.updateDoorSystem(deltaTime);
+    }
 
     // Update power-up spawning
     this.updatePowerUpSpawning(deltaTime);
@@ -518,7 +535,13 @@ class Game {
     });
 
     // Update enemies
-    this.enemies.forEach((enemy) => enemy.update(deltaTime));
+    this.enemies.forEach((enemy) => {
+      if (enemy instanceof BossEnemy) {
+        enemy.update(deltaTime, this);
+      } else {
+        enemy.update(deltaTime);
+      }
+    });
 
     // Update effects
     this.effects.forEach((effect, index) => {
@@ -658,9 +681,16 @@ class Game {
     // Update UI
     this.updateUI();
 
-    // Automatically transition to level 2 after a short delay
+    // Automatically transition to next level after a short delay
     setTimeout(() => {
-      window.location.href = "level2.html";
+      if (this.currentLevel === 1) {
+        window.location.href = "level2.html";
+      } else if (this.currentLevel === 2) {
+        window.location.href = "level3.html";
+      } else if (this.currentLevel === 3) {
+        // Level 3 is the final level, could redirect to main menu or show completion
+        window.location.href = "main-menu.html";
+      }
     }, 2000); // 2 second delay to show the win effect
   }
 
@@ -966,8 +996,48 @@ class Game {
       }
     });
 
+    // Boss Projectile vs Character collisions
+    this.projectiles.forEach((projectile, projIndex) => {
+      if (projectile instanceof BossProjectile) {
+        if (projectile.type === "fire" && this.fireboy.checkCollision(projectile)) {
+          this.fireboy.takeDamage(15);
+          this.addEffect(this.fireboy.x, this.fireboy.y, "hit");
+          this.addTextEffect(this.fireboy.x, this.fireboy.y - 30, "BOSS HIT!", "#ff0000");
+          this.playSound(200, 0.2, "sawtooth");
+          this.projectiles.splice(projIndex, 1);
+        } else if (projectile.type === "water" && this.watergirl.checkCollision(projectile)) {
+          this.watergirl.takeDamage(15);
+          this.addEffect(this.watergirl.x, this.watergirl.y, "hit");
+          this.addTextEffect(this.watergirl.x, this.watergirl.y - 30, "BOSS HIT!", "#ff0000");
+          this.playSound(200, 0.2, "sawtooth");
+          this.projectiles.splice(projIndex, 1);
+        }
+      }
+    });
+
+    // Player Projectile vs Boss collisions
+    this.projectiles.forEach((projectile, projIndex) => {
+      if ((projectile.type === "fireball" || projectile.type === "waterball") && !(projectile instanceof BossProjectile)) {
+        this.enemies.forEach((enemy, enemyIndex) => {
+          if (enemy instanceof BossEnemy && projectile.checkCollision(enemy)) {
+            const damage = projectile.damage || 20;
+            enemy.takeDamage(damage);
+            this.addEffect(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, "hit");
+            this.addTextEffect(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2 - 30, `-${damage}`, "#ffff00");
+            this.playSound(300, 0.3, "square");
+            this.projectiles.splice(projIndex, 1);
+          }
+        });
+      }
+    });
+
     // Projectile vs Defense Barrier collisions
     this.projectiles.forEach((projectile, projIndex) => {
+      // Skip boss projectiles - they cannot be blocked by defense walls
+      if (projectile instanceof BossProjectile) {
+        return;
+      }
+      
       this.defenseWalls.forEach((barrier, barrierIndex) => {
         if (barrier.checkCollision(projectile) && barrier.active) {
           // Check if the projectile belongs to the same player as the barrier
@@ -1123,6 +1193,46 @@ class Game {
         }
       }
     }
+
+    // Check for boss defeat (level 3 specific)
+    if (this.currentLevel === 3) {
+      // Check if either character has died - this means level failed
+      if ((this.fireboy.health <= 0 || this.watergirl.health <= 0) && !this.victoryDeclared) {
+        this.victoryDeclared = true;
+        this.showLevelFailed();
+        return;
+      }
+
+      // Check for boss defeat
+      const boss = this.enemies.find(enemy => enemy instanceof BossEnemy);
+      if (boss && boss.health <= 0 && !this.victoryDeclared) {
+        this.victoryDeclared = true;
+        this.victoryWinner = "both";
+        
+        // Show victory overlay for both players
+        this.showVictoryOverlay("both");
+        
+        // Add points for both players
+        if (window.pointSystem) {
+          window.pointSystem.addPoints("fireboy", 1, "boss_defeat");
+          window.pointSystem.addPoints("watergirl", 1, "boss_defeat");
+        }
+        
+        // Update local scores
+        this.fireboyScore++;
+        this.watergirlScore++;
+        
+        // Play victory sound
+        this.playSound(800, 1.0, "sine");
+        
+        // Add visual effects
+        this.addEffect(this.width / 2, this.height / 2, "explosion");
+        this.addTextEffect(this.width / 2, this.height / 2 - 50, "BOSS DEFEATED!", "#ffff00");
+        
+        // Update UI
+        this.updateUI();
+      }
+    }
   }
 
   showGameOver(winner) {
@@ -1139,6 +1249,14 @@ class Game {
     document.getElementById("gameOverMessage").textContent = "Great teamwork!";
     document.getElementById("gameOverScreen").classList.remove("hidden");
     document.getElementById("nextLevelBtn").style.display = "inline-block";
+  }
+
+  showLevelFailed() {
+    this.gameState = "gameOver";
+    document.getElementById("gameOverTitle").textContent = "Level Failed";
+    document.getElementById("gameOverMessage").textContent = "One of the heroes has fallen! Work together to defeat the boss!";
+    document.getElementById("gameOverScreen").classList.remove("hidden");
+    document.getElementById("nextLevelBtn").style.display = "none";
   }
 
   render() {
@@ -1164,7 +1282,13 @@ class Game {
     this.powerUps.forEach((powerUp) => powerUp.render(this.ctx));
 
     // Draw enemies
-    this.enemies.forEach((enemy) => enemy.render(this.ctx));
+    this.enemies.forEach((enemy) => {
+      enemy.render(this.ctx);
+      // Draw boss health bar if it's a boss
+      if (enemy instanceof BossEnemy) {
+        enemy.renderHealthBar(this.ctx, this.width);
+      }
+    });
 
     // Draw projectiles
     this.projectiles.forEach((projectile) => projectile.render(this.ctx));
@@ -1193,7 +1317,10 @@ class Game {
 
     // Draw UI elements
     this.drawHealthBars();
-    this.drawDoorUI();
+    // Skip door UI for level 3 (boss battle)
+    if (this.currentLevel !== 3) {
+      this.drawDoorUI();
+    }
     this.drawDefenseUI();
   }
 
@@ -1249,6 +1376,15 @@ class Game {
       // Use level 2 background
       this.ctx.drawImage(
         this.assets.level2Background,
+        0,
+        0,
+        this.width,
+        this.height
+      );
+    } else if (this.currentLevel === 3 && this.assets.level3Background) {
+      // Use level 3 background
+      this.ctx.drawImage(
+        this.assets.level3Background,
         0,
         0,
         this.width,
@@ -1336,11 +1472,15 @@ class Game {
   showVictoryOverlay(winner) {
     // Show victory overlay
     document.getElementById("victoryOverlay").classList.remove("hidden");
-    document.getElementById(
-      "victoryWinner"
-    ).textContent = `${winner.toUpperCase()} WINS!`;
-    document.getElementById("victoryWinner").style.color =
-      winner === "fireboy" ? "#ff6b35" : "#4a90e2";
+    
+    if (winner === "both") {
+      document.getElementById("victoryWinner").textContent = "VICTORY!";
+      document.getElementById("victoryWinner").style.color = "#ffff00";
+    } else {
+      document.getElementById("victoryWinner").textContent = `${winner.toUpperCase()} WINS!`;
+      document.getElementById("victoryWinner").style.color =
+        winner === "fireboy" ? "#ff6b35" : "#4a90e2";
+    }
   }
 
   hideVictoryOverlay() {
@@ -1350,6 +1490,11 @@ class Game {
   proceedToLevel2() {
     this.hideVictoryOverlay();
     window.location.href = "level2.html";
+  }
+
+  proceedToLevel3() {
+    this.hideVictoryOverlay();
+    window.location.href = "level3.html";
   }
 
   returnToMainMenuFromVictory() {
@@ -2254,8 +2399,13 @@ class Projectile {
 
   checkCollision(other) {
     // Use circular collision detection for more accurate projectile collisions
+    const projectileCenterX = this.x + this.width / 2;
+    const projectileCenterY = this.y + this.height / 2;
+    const otherCenterX = other.x + other.width / 2;
+    const otherCenterY = other.y + other.height / 2;
+    
     const distance = Math.sqrt(
-      Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2)
+      Math.pow(projectileCenterX - otherCenterX, 2) + Math.pow(projectileCenterY - otherCenterY, 2)
     );
     return distance < this.collisionRadius + other.collisionRadius;
   }
@@ -2684,6 +2834,7 @@ class Enemy {
     this.health = 50;
     this.speed = 50;
     this.direction = 1;
+    this.collisionRadius = 20; // For circular collision detection with projectiles
   }
 
   update(deltaTime) {
@@ -2753,6 +2904,19 @@ class Enemy {
     ctx.lineWidth = 2;
     ctx.strokeRect(this.x, this.y, this.width, this.height);
   }
+
+  takeDamage(amount) {
+    this.health = Math.max(0, this.health - amount);
+  }
+
+  checkCollision(other) {
+    return (
+      this.x < other.x + other.width &&
+      this.x + this.width > other.x &&
+      this.y < other.y + other.height &&
+      this.y + this.height > other.y
+    );
+  }
 }
 
 class BossEnemy extends Enemy {
@@ -2761,7 +2925,55 @@ class BossEnemy extends Enemy {
     this.width = 80;
     this.height = 80;
     this.health = 200;
+    this.maxHealth = 200;
     this.speed = 30;
+    this.direction = 1; // 1 for right, -1 for left
+    this.moveSpeed = 50; // Horizontal movement speed
+    this.lastAttack = 0;
+    this.attackCooldown = 2000; // Attack every 2 seconds
+    this.collisionRadius = 40; // For circular collision detection with projectiles
+  }
+
+  update(deltaTime, game) {
+    // Move horizontally
+    this.x += this.direction * this.moveSpeed * deltaTime;
+    
+    // Reverse direction at screen edges
+    if (this.x <= 0 || this.x >= game.width - this.width) {
+      this.direction *= -1;
+    }
+    
+    // Attack players
+    const currentTime = Date.now();
+    if (currentTime - this.lastAttack > this.attackCooldown) {
+      this.attack(game);
+      this.lastAttack = currentTime;
+    }
+  }
+
+  attack(game) {
+    // Create boss projectiles that target both players
+    if (game.fireboy && game.watergirl) {
+      // Fire projectile at fireboy
+      const fireboyDir = Math.sign(game.fireboy.x - this.x);
+      const bossProjectile1 = new BossProjectile(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        fireboyDir,
+        "fire"
+      );
+      game.projectiles.push(bossProjectile1);
+      
+      // Fire projectile at watergirl
+      const watergirlDir = Math.sign(game.watergirl.x - this.x);
+      const bossProjectile2 = new BossProjectile(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        watergirlDir,
+        "water"
+      );
+      game.projectiles.push(bossProjectile2);
+    }
   }
 
   render(ctx) {
@@ -2812,6 +3024,110 @@ class BossEnemy extends Enemy {
     ctx.lineWidth = 3;
     ctx.strokeRect(this.x, this.y, this.width, this.height);
     ctx.shadowBlur = 0;
+  }
+
+  renderHealthBar(ctx, gameWidth) {
+    const barWidth = 200;
+    const barHeight = 20;
+    const barX = (gameWidth - barWidth) / 2;
+    const barY = 20;
+
+    // Health bar background
+    ctx.fillStyle = "#333";
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // Health bar
+    const healthWidth = (this.health / this.maxHealth) * barWidth;
+    const healthGradient = ctx.createLinearGradient(barX, barY, barX + healthWidth, barY);
+    healthGradient.addColorStop(0, "#ff0000");
+    healthGradient.addColorStop(0.5, "#ff6600");
+    healthGradient.addColorStop(1, "#ffff00");
+
+    ctx.fillStyle = healthGradient;
+    ctx.fillRect(barX, barY, healthWidth, barHeight);
+
+    // Health bar border
+    ctx.strokeStyle = "#ff0000";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+    // Boss label and health percentage
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 16px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("BOSS", gameWidth / 2, barY - 5);
+    
+    // Health percentage
+    ctx.font = "bold 12px Arial";
+    const healthPercent = Math.round((this.health / this.maxHealth) * 100);
+    ctx.fillText(`${this.health}/${this.maxHealth} (${healthPercent}%)`, gameWidth / 2, barY + barHeight + 15);
+    ctx.textAlign = "left";
+  }
+}
+
+// Boss Projectile class
+class BossProjectile {
+  constructor(x, y, direction, type) {
+    this.x = x;
+    this.y = y;
+    this.width = 15;
+    this.height = 15;
+    this.speed = 200;
+    this.direction = direction;
+    this.type = type;
+  }
+
+  update(deltaTime) {
+    this.x += this.direction * this.speed * deltaTime;
+  }
+
+  render(ctx) {
+    if (this.type === "fire") {
+      // Fire projectile
+      const gradient = ctx.createRadialGradient(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        0,
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 2
+      );
+      gradient.addColorStop(0, "#ffff00");
+      gradient.addColorStop(0.5, "#ff6600");
+      gradient.addColorStop(1, "#ff0000");
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+    } else {
+      // Water projectile
+      const gradient = ctx.createRadialGradient(
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        0,
+        this.x + this.width / 2,
+        this.y + this.height / 2,
+        this.width / 2
+      );
+      gradient.addColorStop(0, "#87CEEB");
+      gradient.addColorStop(0.5, "#4a90e2");
+      gradient.addColorStop(1, "#1e90ff");
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+  }
+
+  isOffScreen(width, height) {
+    return this.x < 0 || this.x > width || this.y < 0 || this.y > height;
+  }
+
+  checkCollision(other) {
+    return (
+      this.x < other.x + other.width &&
+      this.x + this.width > other.x &&
+      this.y < other.y + other.height &&
+      this.y + this.height > other.y
+    );
   }
 }
 
