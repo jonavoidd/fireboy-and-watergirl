@@ -58,6 +58,11 @@ class Game {
       fireboy: 0,
       watergirl: 0,
     };
+
+    // Power-up spawning system
+    this.lastPowerUpSpawn = 0;
+    this.powerUpSpawnDelay = 8000; // 8 seconds between power-ups
+    this.maxPowerUps = 3; // Maximum power-ups on screen at once
     this.ultimateReady = {
       fireboy: false,
       watergirl: false,
@@ -247,7 +252,7 @@ class Game {
       .addEventListener("click", () => this.startGame());
     document
       .getElementById("pauseBtn")
-      .addEventListener("click", () => this.togglePause());
+      .addEventListener("click", () => showPauseMenu());
     document
       .getElementById("resetBtn")
       .addEventListener("click", () => this.resetLevel());
@@ -297,6 +302,9 @@ class Game {
     this.doorCountdown = 0;
     this.gameStartTime = Date.now();
     this.doorSpawnDelay = 15000 + Math.random() * 15000; // 15-30 seconds
+
+    // Reset power-up spawning system
+    this.lastPowerUpSpawn = 0;
 
     // Reset defense counts
     this.defenseCount = {
@@ -353,9 +361,7 @@ class Game {
       new Platform(400, this.height - 350, 200, 20, "#8B4513"),
     ];
 
-    // Add power-ups
-    this.powerUps.push(new PowerUp(300, this.height - 250, "health"));
-    this.powerUps.push(new PowerUp(700, this.height - 250, "speed"));
+    // Power-ups will be spawned randomly during gameplay
   }
 
   setupCooperativeLevel() {
@@ -438,26 +444,13 @@ class Game {
       new Platform(400, this.height - 350, 200, 20, "#8B4513"),
     ];
 
-    // Add multiple power-ups
-    this.powerUps.push(new PowerUp(300, this.height - 250, "health"));
-    this.powerUps.push(new PowerUp(700, this.height - 250, "speed"));
-    this.powerUps.push(new PowerUp(450, this.height - 400, "power"));
+    // Power-ups will be spawned randomly during gameplay
   }
 
   startGame() {
     this.gameState = "playing";
     document.getElementById("startBtn").style.display = "none";
     document.getElementById("pauseBtn").style.display = "inline-block";
-  }
-
-  togglePause() {
-    if (this.gameState === "playing") {
-      this.gameState = "paused";
-      document.getElementById("pauseBtn").textContent = "Resume";
-    } else if (this.gameState === "paused") {
-      this.gameState = "playing";
-      document.getElementById("pauseBtn").textContent = "Pause";
-    }
   }
 
   resetLevel() {
@@ -490,6 +483,9 @@ class Game {
 
     // Update door system
     this.updateDoorSystem(deltaTime);
+
+    // Update power-up spawning
+    this.updatePowerUpSpawning(deltaTime);
 
     // Update ultimate skill cooldowns
     this.updateUltimateCooldowns(deltaTime);
@@ -579,7 +575,7 @@ class Game {
         ];
       this.door = new Door(
         randomPlatform.x + (randomPlatform.width - 80) / 2,
-        randomPlatform.y - 80,
+        randomPlatform.y - 73,
         this.assets.doorSprite
       );
       this.doorActive = true;
@@ -650,6 +646,61 @@ class Game {
     setTimeout(() => {
       window.location.href = 'level2.html';
     }, 2000); // 2 second delay to show the win effect
+  }
+
+  updatePowerUpSpawning(deltaTime) {
+    const currentTime = Date.now();
+
+    // Check if it's time to spawn a new power-up
+    if (
+      currentTime - this.lastPowerUpSpawn >= this.powerUpSpawnDelay &&
+      this.powerUps.length < this.maxPowerUps
+    ) {
+      this.spawnRandomPowerUp();
+      this.lastPowerUpSpawn = currentTime;
+    }
+  }
+
+  spawnRandomPowerUp() {
+    // Available power-up types
+    const powerUpTypes = ["health", "speed"];
+
+    // Choose random type
+    const randomType =
+      powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+
+    // Find a safe spawn location (on a platform)
+    const availablePlatforms = this.platforms.filter(
+      (platform) => platform.y < this.height - 100 && platform.width > 60
+    );
+
+    if (availablePlatforms.length > 0) {
+      const randomPlatform =
+        availablePlatforms[
+          Math.floor(Math.random() * availablePlatforms.length)
+        ];
+
+      // Spawn power-up on the platform
+      const powerUp = new PowerUp(
+        randomPlatform.x + Math.random() * (randomPlatform.width - 30),
+        randomPlatform.y - 35,
+        randomType
+      );
+
+      this.powerUps.push(powerUp);
+
+      // Add visual effect
+      this.addEffect(powerUp.x + 15, powerUp.y + 15, "powerup");
+      this.addTextEffect(
+        powerUp.x + 15,
+        powerUp.y - 10,
+        `${randomType.toUpperCase()} SPAWNED!`,
+        "#ffff00"
+      );
+
+      // Play spawn sound
+      this.playSound(400, 0.3, "triangle");
+    }
   }
 
   updateUltimateCooldowns(deltaTime) {
@@ -1228,8 +1279,14 @@ class Game {
       this.ctx.textAlign = "center";
       this.ctx.strokeStyle = "#000";
       this.ctx.lineWidth = 3;
-      this.ctx.strokeText(`DOOR: ${timeLeft}s`, this.width / 2, 60);
-      this.ctx.fillText(`DOOR: ${timeLeft}s`, this.width / 2, 60);
+
+      if (timeLeft <= 0) {
+        this.ctx.strokeText("Door has appeared!", this.width / 2, 60);
+        this.ctx.fillText("Door has appeared!", this.width / 2, 60);
+      } else {
+        this.ctx.strokeText(`DOOR: ${timeLeft}s`, this.width / 2, 60);
+        this.ctx.fillText(`DOOR: ${timeLeft}s`, this.width / 2, 60);
+      }
     } else if (!this.door) {
       const timeUntilDoor = Math.ceil(
         (this.doorSpawnDelay - (Date.now() - this.gameStartTime)) / 1000
@@ -2187,7 +2244,7 @@ class PowerUp {
         );
         break;
       case "speed":
-        character.speed += 50;
+        character.speed += 20;
         console.log(
           `${character.type} gained speed! New speed: ${character.speed}`
         );

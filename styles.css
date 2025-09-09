@@ -732,3 +732,31 @@ button:disabled {
     min-width: 45px;
   }
 }
+
+/* Pause Button in Header */
+#gameInfo .pause-btn {
+  background: linear-gradient(135deg, #ff6b35, #ff8c42);
+  border: 2px solid #ff4500;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: "Orbitron", sans-serif;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-left: 20px;
+}
+
+#gameInfo .pause-btn:hover {
+  background: linear-gradient(135deg, #ff8c42, #ff6b35);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+#gameInfo .pause-btn:active {
+  transform: translateY(0);
+}
