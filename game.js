@@ -20,6 +20,7 @@ class Game {
     this.enemies = [];
     this.defenseWalls = []; // Active defense barriers
     this.effects = []; // Visual effects array
+    this.acidRain = []; // Acid rain particles
 
     // Active defense system
     this.activeDefense = {
@@ -274,6 +275,7 @@ class Game {
     this.goals = [];
     this.enemies = [];
     this.defenseWalls = [];
+    this.acidRain = [];
 
     // Reset defense system
     this.activeDefense = {
@@ -378,6 +380,9 @@ class Game {
     // Add enemies that both players must defeat
     this.enemies.push(new Enemy(400, this.height - 400, "fire"));
     this.enemies.push(new Enemy(500, this.height - 400, "water"));
+
+    // Start acid rain for level 2
+    this.startAcidRain();
   }
 
   setupBossLevel() {
@@ -519,6 +524,9 @@ class Game {
       }
     });
 
+    // Update acid rain
+    this.updateAcidRain(deltaTime);
+
     // Update defense walls
     this.defenseWalls.forEach((wall, index) => {
       if (!wall.update(deltaTime)) {
@@ -594,12 +602,12 @@ class Game {
   checkDoorCollision() {
     if (!this.door) return;
 
-    // Check if Fireboy reaches the door
-    if (this.door.checkCollision(this.fireboy)) {
+    // Check if Fireboy reaches the door (only if alive)
+    if (this.fireboy && this.fireboy.health > 0 && this.door.checkCollision(this.fireboy)) {
       this.handleDoorWin("fireboy");
     }
-    // Check if Watergirl reaches the door
-    else if (this.door.checkCollision(this.watergirl)) {
+    // Check if Watergirl reaches the door (only if alive)
+    else if (this.watergirl && this.watergirl.health > 0 && this.door.checkCollision(this.watergirl)) {
       this.handleDoorWin("watergirl");
     }
   }
@@ -961,6 +969,21 @@ class Game {
         this.playSound(600, 0.5, "triangle");
       }
     });
+
+    // Acid rain vs Character collisions
+    this.acidRain.forEach((drop, dropIndex) => {
+      if (this.fireboy && drop.checkCollision(this.fireboy)) {
+        this.fireboy.takeDamage(drop.damage);
+        this.addEffect(drop.x, drop.y, "hit");
+        this.addTextEffect(drop.x, drop.y - 10, "ACID!", "#00ff00");
+        this.acidRain.splice(dropIndex, 1);
+      } else if (this.watergirl && drop.checkCollision(this.watergirl)) {
+        this.watergirl.takeDamage(drop.damage);
+        this.addEffect(drop.x, drop.y, "hit");
+        this.addTextEffect(drop.x, drop.y - 10, "ACID!", "#00ff00");
+        this.acidRain.splice(dropIndex, 1);
+      }
+    });
   }
 
   checkWinConditions() {
@@ -968,13 +991,8 @@ class Game {
     if (!this.fireboy || !this.watergirl) return;
 
     if (this.gameMode === "competitive") {
-      if (this.fireboy.health <= 0) {
-        this.watergirlScore++;
-        this.showGameOver("Watergirl Wins!");
-      } else if (this.watergirl.health <= 0) {
-        this.fireboyScore++;
-        this.showGameOver("Fireboy Wins!");
-      }
+      // Don't end the game when a character dies - let them become unplayable
+      // The surviving character can continue to reach the door
     } else if (this.gameMode === "cooperative") {
       // Check if all goals are activated (only if there are goals)
       if (this.goals.length > 0) {
@@ -1048,6 +1066,9 @@ class Game {
 
     // Draw effects
     this.effects.forEach((effect) => effect.render(this.ctx));
+
+    // Draw acid rain
+    this.acidRain.forEach((drop) => drop.render(this.ctx));
 
     // Draw UI elements
     this.drawHealthBars();
@@ -1507,6 +1528,61 @@ class Game {
     ).textContent = `Watergirl: ${this.watergirlScore}`;
   }
 
+  startAcidRain() {
+    // Start acid rain only for level 2
+    if (this.currentLevel === 2) {
+      this.acidRainSpawnTimer = 0;
+      this.acidRainSpawnRate = 0.15; // Spawn every 0.15 seconds (much more frequent)
+    }
+  }
+
+  updateAcidRain(deltaTime) {
+    if (this.currentLevel !== 2) return;
+
+    // Update existing acid drops
+    this.acidRain.forEach((drop, index) => {
+      drop.update(deltaTime);
+      
+      // Check platform collisions
+      this.platforms.forEach((platform) => {
+        if (
+          drop.x < platform.x + platform.width &&
+          drop.x + drop.width > platform.x &&
+          drop.y < platform.y + platform.height &&
+          drop.y + drop.height > platform.y
+        ) {
+          drop.hitGround = true;
+        }
+      });
+      
+      // Remove drops that hit the ground or go off screen
+      if (drop.y > this.height || drop.hitGround) {
+        this.acidRain.splice(index, 1);
+      }
+    });
+
+    // Spawn new acid drops
+    this.acidRainSpawnTimer += deltaTime;
+    if (this.acidRainSpawnTimer >= this.acidRainSpawnRate) {
+      this.spawnAcidDrop();
+      this.acidRainSpawnTimer = 0;
+    }
+  }
+
+  spawnAcidDrop() {
+    // Spawn 2-4 acid drops at once for more intense rain
+    const dropCount = Math.floor(Math.random() * 3) + 2; // 2-4 drops
+    
+    for (let i = 0; i < dropCount; i++) {
+      const drop = new AcidDrop(
+        Math.random() * this.width, // Random x position
+        -10 - (i * 20), // Stagger drops vertically
+        Math.random() * 100 + 150 // Random fall speed
+      );
+      this.acidRain.push(drop);
+    }
+  }
+
   gameLoop(currentTime = 0) {
     // Handle first frame
     if (this.lastTime === 0) {
@@ -1548,6 +1624,15 @@ class Character {
   }
 
   update(deltaTime, keys, platforms) {
+    // Don't update if character is dead
+    if (this.health <= 0) {
+      // Make character fall and become unplayable
+      this.velocityY += 800 * deltaTime; // gravity
+      this.y += this.velocityY * deltaTime;
+      this.velocityX = 0; // Stop horizontal movement
+      return;
+    }
+
     // Handle input
     this.handleInput(keys, deltaTime);
 
@@ -1653,6 +1738,14 @@ class Character {
   }
 
   render(ctx) {
+    ctx.save();
+    
+    // If character is dead, make them grayed out
+    if (this.health <= 0) {
+      ctx.globalAlpha = 0.5; // Make semi-transparent
+      ctx.filter = "grayscale(100%)"; // Make grayscale
+    }
+
     if (this.type === "fireboy" && window.game.assets.fireboySprite) {
       // Draw Fireboy sprite
       ctx.drawImage(
@@ -1688,6 +1781,8 @@ class Character {
       ctx.fillRect(this.x + 15, this.y + 15, 5, 5);
       ctx.fillRect(this.x + 25, this.y + 15, 5, 5);
     }
+    
+    ctx.restore();
   }
 }
 
@@ -1697,6 +1792,9 @@ class Fireboy extends Character {
   }
 
   handleInput(keys, deltaTime) {
+    // Don't handle input if character is dead
+    if (this.health <= 0) return;
+
     // Movement
     if (keys["KeyA"]) {
       this.velocityX = -this.speed;
@@ -1733,6 +1831,9 @@ class Watergirl extends Character {
   }
 
   handleInput(keys, deltaTime) {
+    // Don't handle input if character is dead
+    if (this.health <= 0) return;
+
     // Movement
     if (keys["ArrowLeft"]) {
       this.velocityX = -this.speed;
@@ -2758,6 +2859,78 @@ class Door {
       this.y < other.y + other.height &&
       this.y + this.height > other.y
     );
+  }
+}
+
+// AcidDrop class for acid rain
+class AcidDrop {
+  constructor(x, y, fallSpeed) {
+    this.x = x;
+    this.y = y;
+    this.width = 4;
+    this.height = 6;
+    this.fallSpeed = fallSpeed;
+    this.damage = 5; // Damage per hit
+    this.hitGround = false;
+    this.alpha = 0.8;
+    this.glowIntensity = 0;
+  }
+
+  update(deltaTime) {
+    // Fall downward
+    this.y += this.fallSpeed * deltaTime;
+
+    // Animate glow effect
+    this.glowIntensity += deltaTime * 0.01;
+    if (this.glowIntensity > Math.PI * 2) {
+      this.glowIntensity = 0;
+    }
+
+    // Check if hit ground (platforms)
+    // This will be handled in the collision detection
+  }
+
+  checkCollision(character) {
+    return (
+      this.x < character.x + character.width &&
+      this.x + this.width > character.x &&
+      this.y < character.y + character.height &&
+      this.y + this.height > character.y
+    );
+  }
+
+  render(ctx) {
+    ctx.save();
+    
+    // Create acid drop with green gradient and glow
+    const gradient = ctx.createRadialGradient(
+      this.x + this.width / 2,
+      this.y + this.height / 2,
+      0,
+      this.x + this.width / 2,
+      this.y + this.height / 2,
+      this.width / 2
+    );
+    gradient.addColorStop(0, "#00ff00");
+    gradient.addColorStop(0.5, "#00cc00");
+    gradient.addColorStop(1, "#008800");
+
+    // Add glow effect
+    const glow = Math.sin(this.glowIntensity) * 0.3 + 0.7;
+    ctx.shadowColor = "#00ff00";
+    ctx.shadowBlur = 5 * glow;
+    ctx.globalAlpha = this.alpha;
+
+    // Draw the acid drop
+    ctx.fillStyle = gradient;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+    // Add inner highlight
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#88ff88";
+    ctx.fillRect(this.x + 1, this.y + 1, this.width - 2, 2);
+
+    ctx.restore();
   }
 }
 
