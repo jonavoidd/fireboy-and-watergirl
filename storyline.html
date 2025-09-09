@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fireboy vs Watergirl - Main Menu</title>
+    <title>Fireboy vs Watergirl - Storyline</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
         
@@ -17,9 +17,9 @@
             font-family: 'MedievalSharp', cursive;
             background: #0a0a0a;
             color: #d4af37;
-            overflow: hidden;
+            overflow-x: hidden;
             position: relative;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         /* Animated dungeon background */
@@ -106,15 +106,12 @@
             border: 2px solid #4a3020;
         }
 
-        /* Main container */
-        .main-container {
+        .container {
             position: relative;
             z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
             animation: fadeIn 2s ease-in;
         }
 
@@ -123,15 +120,13 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Title styling */
-        .game-title {
+        .header {
             text-align: center;
             margin-bottom: 50px;
-            position: relative;
         }
 
-        .title-main {
-            font-size: 4em;
+        .title {
+            font-size: 3.5em;
             background: linear-gradient(45deg, #ff6b35, #4a90e2);
             background-clip: text;
             -webkit-background-clip: text;
@@ -139,6 +134,7 @@
             text-shadow: 0 0 30px rgba(255, 107, 53, 0.5), 0 0 60px rgba(74, 144, 226, 0.5);
             animation: titleGlow 3s ease-in-out infinite;
             letter-spacing: 3px;
+            margin-bottom: 20px;
         }
 
         @keyframes titleGlow {
@@ -146,22 +142,67 @@
             50% { filter: brightness(1.3); }
         }
 
-        .title-sub {
+        .subtitle {
             font-size: 1.5em;
             color: #8B7355;
-            margin-top: 10px;
             letter-spacing: 5px;
         }
 
-        /* Menu buttons */
-        .menu-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 300px;
+        .story-content {
+            background: linear-gradient(135deg, rgba(44, 24, 16, 0.9), rgba(74, 40, 24, 0.9));
+            border: 3px solid #d4af37;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 
+                inset 0 0 30px rgba(0,0,0,0.5),
+                0 10px 30px rgba(0,0,0,0.8);
+            line-height: 1.8;
         }
 
-        .menu-btn {
+        .story-section {
+            margin-bottom: 30px;
+        }
+
+        .story-section h2 {
+            color: #ff6b35;
+            font-size: 2em;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            letter-spacing: 2px;
+        }
+
+        .story-section h3 {
+            color: #4a90e2;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            margin-top: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .story-section p {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        .character-highlight {
+            color: #d4af37;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        .fireboy-text {
+            color: #ff6b35;
+            font-weight: bold;
+        }
+
+        .watergirl-text {
+            color: #4a90e2;
+            font-weight: bold;
+        }
+
+        .back-button {
             background: linear-gradient(135deg, #2c1810, #4a2818);
             border: 3px solid #d4af37;
             color: #d4af37;
@@ -177,9 +218,13 @@
             box-shadow: 
                 inset 0 0 20px rgba(0,0,0,0.5),
                 0 5px 15px rgba(0,0,0,0.8);
+            display: block;
+            margin: 0 auto;
+            width: 200px;
+            text-align: center;
         }
 
-        .menu-btn::before {
+        .back-button::before {
             content: '';
             position: absolute;
             top: 0;
@@ -190,11 +235,11 @@
             transition: left 0.5s ease;
         }
 
-        .menu-btn:hover::before {
+        .back-button:hover::before {
             left: 100%;
         }
 
-        .menu-btn:hover {
+        .back-button:hover {
             background: linear-gradient(135deg, #4a2818, #6a3828);
             transform: translateY(-2px);
             box-shadow: 
@@ -203,68 +248,8 @@
             text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
         }
 
-        .menu-btn:active {
+        .back-button:active {
             transform: translateY(0);
-        }
-
-        /* Character sprites */
-        .characters {
-            position: absolute;
-            bottom: 10%;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 10%;
-        }
-
-        .character {
-            width: 80px;
-            height: 100px;
-            animation: characterFloat 3s ease-in-out infinite;
-        }
-
-        .character.fireboy {
-            background: linear-gradient(135deg, #ff6b35, #ff8c42);
-            border-radius: 40% 40% 50% 50%;
-            box-shadow: 0 0 30px #ff6b35;
-            animation-delay: 0s;
-        }
-
-        .character.watergirl {
-            background: linear-gradient(135deg, #4a90e2, #87CEEB);
-            border-radius: 40% 40% 50% 50%;
-            box-shadow: 0 0 30px #4a90e2;
-            animation-delay: 1.5s;
-        }
-
-        @keyframes characterFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        /* Settings and credits */
-        .bottom-buttons {
-            position: absolute;
-            bottom: 20px;
-            display: flex;
-            gap: 20px;
-        }
-
-        .small-btn {
-            background: rgba(42, 24, 16, 0.8);
-            border: 2px solid #8B7355;
-            color: #8B7355;
-            padding: 8px 20px;
-            font-size: 0.9em;
-            font-family: 'MedievalSharp', cursive;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .small-btn:hover {
-            background: rgba(74, 40, 24, 0.9);
-            color: #d4af37;
-            border-color: #d4af37;
         }
 
         /* Particle effects */
@@ -294,8 +279,6 @@
                 opacity: 0;
             }
         }
-
-
     </style>
 </head>
 <body>
@@ -311,31 +294,86 @@
         <div class="torch-holder"></div>
     </div>
     
-    <div class="main-container">
-        <div class="game-title">
-            <h1 class="title-main">FIREBOY vs WATERGIRL</h1>
-            <p class="title-sub">DUNGEON BATTLES</p>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">THE LEGEND</h1>
+            <p class="subtitle">FIREBOY vs WATERGIRL</p>
         </div>
         
-        <div class="menu-buttons">
-            <button class="menu-btn" onclick="startGame()">Start Adventure</button>
-            <button class="menu-btn" onclick="selectMap()">Select Map</button>
-            <button class="menu-btn" onclick="showInstructions()">How to Play</button>
+        <div class="story-content">
+            <div class="story-section">
+                <h2>🌋 The Ancient Conflict</h2>
+                <p>
+                    In the mystical realm of <span class="character-highlight">Elemental Dungeons</span>, two ancient forces have been locked in eternal conflict. 
+                    <span class="fireboy-text">Fireboy</span>, the embodiment of raw flame and passion, wields the power of molten lava and scorching heat. 
+                    <span class="watergirl-text">Watergirl</span>, the spirit of flowing water and ice, commands the forces of liquid and frost.
+                </p>
+                <p>
+                    For centuries, these elemental warriors have battled across the treacherous dungeons, each seeking to prove their elemental supremacy. 
+                    Their eternal rivalry has shaped the very landscape of their world, creating dangerous platforms, mysterious doors, and powerful artifacts.
+                </p>
+            </div>
+
+            <div class="story-section">
+                <h2>⚔️ The Battle Arena</h2>
+                <p>
+                    The <span class="character-highlight">Dungeon Battles</span> take place in ancient arenas where the very walls pulse with elemental energy. 
+                    These mystical chambers are filled with:
+                </p>
+                <h3>🔥 Fireboy's Arsenal</h3>
+                <p>
+                    • <strong>Fireball Projectiles:</strong> Scorching spheres of pure flame that burn through anything in their path<br>
+                    • <strong>Defense Barriers:</strong> Walls of molten rock that can block incoming attacks<br>
+                    • <strong>Ultimate Inferno:</strong> A devastating blast of fire that engulfs the entire arena
+                </p>
+                <h3>💧 Watergirl's Powers</h3>
+                <p>
+                    • <strong>Waterball Projectiles:</strong> Freezing spheres that can slow and damage opponents<br>
+                    • <strong>Ice Barriers:</strong> Crystalline walls that deflect enemy attacks<br>
+                    • <strong>Ultimate Tsunami:</strong> A massive wave of water that sweeps across the battlefield
+                </p>
+            </div>
+
+            <div class="story-section">
+                <h2>🚪 The Mystical Doors</h2>
+                <p>
+                    Throughout the dungeons, <span class="character-highlight">Mystical Doors</span> appear at random intervals, pulsing with ancient magic. 
+                    These doors are the ultimate prize - whoever reaches them first gains access to the next level of the elemental realm.
+                </p>
+                <p>
+                    But beware! The doors are not easily obtained. They require skill, strategy, and the ability to defend against your opponent's relentless attacks. 
+                    Only by mastering both offense and defense can a warrior hope to claim victory.
+                </p>
+            </div>
+
+            <div class="story-section">
+                <h2>🛡️ The Defense System</h2>
+                <p>
+                    In their eternal struggle, both warriors have developed <span class="character-highlight">Defense Barriers</span> - temporary shields that can block incoming projectiles. 
+                    These barriers are not just defensive tools; they are the key to unlocking ultimate power.
+                </p>
+                <p>
+                    Each successful defense builds up the warrior's elemental energy. After blocking five enemy attacks, the warrior becomes charged with enough power to unleash their <span class="character-highlight">Ultimate Attack</span> - 
+                    a devastating elemental assault that can turn the tide of battle in an instant.
+                </p>
+            </div>
+
+            <div class="story-section">
+                <h2>🏆 The Eternal Quest</h2>
+                <p>
+                    The battle between <span class="fireboy-text">Fireboy</span> and <span class="watergirl-text">Watergirl</span> is more than just a fight for supremacy. 
+                    It is a test of skill, strategy, and elemental mastery. Each victory brings them closer to understanding the true nature of their powers.
+                </p>
+                <p>
+                    Will you help <span class="fireboy-text">Fireboy</span> prove that fire conquers all? Or will you aid <span class="watergirl-text">Watergirl</span> in demonstrating that water can extinguish any flame? 
+                    The choice is yours, and the fate of the elemental realm hangs in the balance!
+                </p>
+            </div>
         </div>
         
-        <div class="bottom-buttons">
-            <button class="small-btn" onclick="showCredits()">Credits</button>
-        </div>
-    </div>
-    
-    <div class="characters">
-        <div class="character fireboy"></div>
-        <div class="character watergirl"></div>
+        <button class="back-button" onclick="goBack()">Return to Menu</button>
     </div>
 
-
-    
-    <script src="settings.js"></script>
     <script>
         // Create floating particles
         function createParticle() {
@@ -354,42 +392,8 @@
         // Create particles periodically
         setInterval(createParticle, 300);
         
-        // Menu functions
-        function startGame() {
-            // Start with tutorial (index.html)
+        function goBack() {
             window.location.href = 'index.html';
-        }
-        
-        function selectMap() {
-            // Go to map selection
-            window.location.href = 'map-selection.html';
-        }
-        
-        function showInstructions() {
-            alert('CONTROLS:\n\nFireboy:\n• WASD to move\n• Space to shoot fireball\n\nWatergirl:\n• Arrow Keys to move\n• Enter to shoot waterball\n\nOBJECTIVE:\nCollect power-ups, defeat enemies, and reach the doors before your opponent!\n\nGAME MODES:\n• Competitive: Battle against each other\n• Cooperative: Work together to solve puzzles');
-        }
-        
-        function showLeaderboard() {
-            // Try to load scores from localStorage
-            try {
-                const savedProgress = localStorage.getItem('fireboyWatergirlPoints');
-                if (savedProgress) {
-                    const data = JSON.parse(savedProgress);
-                    alert(`LEADERBOARD\n\n🔥 Fireboy\nTotal Points: ${data.fireboyPoints || 0}\nDoor Wins: ${data.doorWins?.fireboy || 0}\n\n💧 Watergirl\nTotal Points: ${data.watergirlPoints || 0}\nDoor Wins: ${data.doorWins?.watergirl || 0}\n\nTotal Rounds: ${data.totalRounds || 0}`);
-                } else {
-                    alert('No scores yet! Play some games first!');
-                }
-            } catch (e) {
-                alert('No scores yet! Play some games first!');
-            }
-        }
-        
-        function showSettings() {
-            window.location.href = 'settings.html';
-        }
-
-        function showCredits() {
-            window.location.href = 'credits.html';
         }
     </script>
 </body>
