@@ -18,7 +18,20 @@ class Game {
     this.platforms = [];
     this.goals = [];
     this.enemies = [];
+    this.defenseWalls = []; // Active defense barriers
     this.effects = []; // Visual effects array
+    
+    // Active defense system
+    this.activeDefense = {
+      fireboy: false,
+      watergirl: false
+    };
+    this.defenseCooldown = {
+      fireboy: 0,
+      watergirl: 0
+    };
+    this.defenseDuration = 5000; // 5 seconds
+    this.defenseCooldownTime = 10000; // 10 seconds cooldown
 
     this.fireboyScore = 0;
     this.watergirlScore = 0;
@@ -154,6 +167,25 @@ class Game {
     this.effects.push(new TextEffect(x, y, text, color, duration));
   }
 
+  createDefenseBarrier(defender) {
+    // Create a defense barrier in front of the character
+    if (defender === "fireboy" && this.fireboy) {
+      const barrier = new DefenseBarrier(
+        this.fireboy.x + this.fireboy.width,
+        this.fireboy.y + this.fireboy.height / 2 - 2,
+        defender
+      );
+      this.defenseWalls.push(barrier);
+    } else if (defender === "watergirl" && this.watergirl) {
+      const barrier = new DefenseBarrier(
+        this.watergirl.x - 100, // In front of watergirl
+        this.watergirl.y + this.watergirl.height / 2 - 2,
+        defender
+      );
+      this.defenseWalls.push(barrier);
+    }
+  }
+
   setupEventListeners() {
     // Keyboard controls
     document.addEventListener("keydown", (e) => {
@@ -190,6 +222,17 @@ class Game {
     this.platforms = [];
     this.goals = [];
     this.enemies = [];
+    this.defenseWalls = [];
+    
+    // Reset defense system
+    this.activeDefense = {
+      fireboy: false,
+      watergirl: false
+    };
+    this.defenseCooldown = {
+      fireboy: 0,
+      watergirl: 0
+    };
 
     // Reset door system
     this.door = null;
@@ -387,6 +430,9 @@ class Game {
 
     // Update ultimate skill cooldowns
     this.updateUltimateCooldowns(deltaTime);
+    
+    // Update defense system
+    this.updateDefenseSystem(deltaTime);
 
     // Update characters (only if they exist)
     if (this.fireboy) {
@@ -412,6 +458,13 @@ class Game {
       effect.update(deltaTime);
       if (effect.isFinished()) {
         this.effects.splice(index, 1);
+      }
+    });
+
+    // Update defense walls
+    this.defenseWalls.forEach((wall, index) => {
+      if (!wall.update(deltaTime)) {
+        this.defenseWalls.splice(index, 1);
       }
     });
 
@@ -546,6 +599,59 @@ class Game {
     }
   }
 
+  updateDefenseSystem(deltaTime) {
+    // Update defense cooldowns
+    if (this.defenseCooldown.fireboy > 0) {
+      this.defenseCooldown.fireboy -= deltaTime;
+      if (this.defenseCooldown.fireboy <= 0) {
+        this.defenseCooldown.fireboy = 0;
+      }
+    }
+    if (this.defenseCooldown.watergirl > 0) {
+      this.defenseCooldown.watergirl -= deltaTime;
+      if (this.defenseCooldown.watergirl <= 0) {
+        this.defenseCooldown.watergirl = 0;
+      }
+    }
+
+    // Clear existing barriers
+    this.defenseWalls = [];
+
+    // Handle active defense for Fireboy
+    if (this.keys["KeyQ"] && this.defenseCooldown.fireboy <= 0 && this.fireboy) {
+      if (!this.activeDefense.fireboy) {
+        this.activeDefense.fireboy = true;
+        this.defenseStartTime = Date.now();
+      }
+      // Update barrier position
+      this.createDefenseBarrier("fireboy");
+    } else {
+      this.activeDefense.fireboy = false;
+    }
+
+    // Handle active defense for Watergirl
+    if (this.keys["KeyP"] && this.defenseCooldown.watergirl <= 0 && this.watergirl) {
+      if (!this.activeDefense.watergirl) {
+        this.activeDefense.watergirl = true;
+        this.defenseStartTime = Date.now();
+      }
+      // Update barrier position
+      this.createDefenseBarrier("watergirl");
+    } else {
+      this.activeDefense.watergirl = false;
+    }
+
+    // Check if defense duration has expired
+    if (this.activeDefense.fireboy && Date.now() - this.defenseStartTime >= this.defenseDuration) {
+      this.activeDefense.fireboy = false;
+      this.defenseCooldown.fireboy = this.defenseCooldownTime;
+    }
+    if (this.activeDefense.watergirl && Date.now() - this.defenseStartTime >= this.defenseDuration) {
+      this.activeDefense.watergirl = false;
+      this.defenseCooldown.watergirl = this.defenseCooldownTime;
+    }
+  }
+
   checkProjectileCollisions() {
     // Check for projectile vs projectile collisions
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
@@ -562,23 +668,23 @@ class Game {
           this.addTextEffect(
             collisionX,
             collisionY - 20,
-            "BLOCKED!",
+            "DEFENSE WALL!",
             "#ffff00"
           );
 
           // Play collision sound
           this.playSound(300, 0.3, "square");
 
-          // Add points for successful defense (optional)
+          // Determine who gets the defense point (the one who shot the projectile that was blocked)
+          const defender = proj1.type === "fireball" ? "watergirl" : "fireboy";
+          const attacker = proj1.type === "fireball" ? "fireboy" : "watergirl";
+
+          // Add points for successful defense
           if (window.pointSystem) {
-            // Give a small point bonus for defensive play
-            const defender =
-              proj1.type === "fireball" ? "watergirl" : "fireboy";
-            window.pointSystem.addPoints(defender, 0.5, "defense");
+            window.pointSystem.addPoints(defender, 1, "defense");
           }
 
           // Track defense count
-          const defender = proj1.type === "fireball" ? "watergirl" : "fireboy";
           this.defenseCount[defender]++;
 
           // Check if ultimate skill is ready
@@ -599,7 +705,7 @@ class Game {
             this.playSound(400, 0.8, "triangle");
           }
 
-          // Remove both projectiles
+          // Remove both projectiles (no automatic defense walls)
           this.projectiles.splice(i, 1);
           this.projectiles.splice(j, 1);
 
@@ -692,6 +798,34 @@ class Game {
 
         this.projectiles.splice(projIndex, 1);
       }
+    });
+
+    // Projectile vs Defense Barrier collisions
+    this.projectiles.forEach((projectile, projIndex) => {
+      this.defenseWalls.forEach((barrier, barrierIndex) => {
+        if (barrier.checkCollision(projectile) && barrier.active) {
+          // Projectile hits active defense barrier - block it
+          this.addEffect(projectile.x, projectile.y, "explosion");
+          this.addTextEffect(
+            projectile.x,
+            projectile.y - 20,
+            "BLOCKED!",
+            "#ffff00"
+          );
+          this.playSound(300, 0.3, "square");
+          
+          // Award defense points only for successful blocks with active defense
+          if (window.pointSystem) {
+            window.pointSystem.addPoints(barrier.defender, 1, "defense");
+          }
+          
+          // Track defense count for ultimate
+          this.defenseCount[barrier.defender]++;
+          
+          // Remove the projectile
+          this.projectiles.splice(projIndex, 1);
+        }
+      });
     });
 
     // Character vs Power-up collisions
@@ -796,6 +930,9 @@ class Game {
     // Draw projectiles
     this.projectiles.forEach((projectile) => projectile.render(this.ctx));
 
+    // Draw defense walls
+    this.defenseWalls.forEach((wall) => wall.render(this.ctx));
+
     // Draw door
     if (this.door) {
       this.door.render(this.ctx);
@@ -815,6 +952,7 @@ class Game {
     // Draw UI elements
     this.drawHealthBars();
     this.drawDoorUI();
+    this.drawDefenseUI();
   }
 
   drawLoadingScreen() {
@@ -1005,6 +1143,60 @@ class Game {
     this.drawUltimateIndicators();
 
     this.ctx.textAlign = "left";
+  }
+
+  drawDefenseUI() {
+    // Draw defense status for Fireboy
+    if (this.fireboy) {
+      const fireboyX = 20;
+      const fireboyY = 140;
+      
+      // Defense status
+      if (this.activeDefense.fireboy) {
+        const timeLeft = Math.ceil((this.defenseDuration - (Date.now() - this.defenseStartTime)) / 1000);
+        this.ctx.fillStyle = "#ff6b35";
+        this.ctx.font = "bold 14px Arial";
+        this.ctx.textAlign = "left";
+        this.ctx.fillText(`DEFENSE: ${timeLeft}s`, fireboyX, fireboyY);
+      } else if (this.defenseCooldown.fireboy > 0) {
+        const cooldownLeft = Math.ceil(this.defenseCooldown.fireboy / 1000);
+        this.ctx.fillStyle = "#666";
+        this.ctx.font = "bold 14px Arial";
+        this.ctx.textAlign = "left";
+        this.ctx.fillText(`DEFENSE COOLDOWN: ${cooldownLeft}s`, fireboyX, fireboyY);
+      } else {
+        this.ctx.fillStyle = "#ffff00";
+        this.ctx.font = "bold 14px Arial";
+        this.ctx.textAlign = "left";
+        this.ctx.fillText("DEFENSE READY (Q)", fireboyX, fireboyY);
+      }
+    }
+
+    // Draw defense status for Watergirl
+    if (this.watergirl) {
+      const watergirlX = this.width - 200;
+      const watergirlY = 140;
+      
+      // Defense status
+      if (this.activeDefense.watergirl) {
+        const timeLeft = Math.ceil((this.defenseDuration - (Date.now() - this.defenseStartTime)) / 1000);
+        this.ctx.fillStyle = "#4a90e2";
+        this.ctx.font = "bold 14px Arial";
+        this.ctx.textAlign = "right";
+        this.ctx.fillText(`DEFENSE: ${timeLeft}s`, watergirlX, watergirlY);
+      } else if (this.defenseCooldown.watergirl > 0) {
+        const cooldownLeft = Math.ceil(this.defenseCooldown.watergirl / 1000);
+        this.ctx.fillStyle = "#666";
+        this.ctx.font = "bold 14px Arial";
+        this.ctx.textAlign = "right";
+        this.ctx.fillText(`DEFENSE COOLDOWN: ${cooldownLeft}s`, watergirlX, watergirlY);
+      } else {
+        this.ctx.fillStyle = "#ffff00";
+        this.ctx.font = "bold 14px Arial";
+        this.ctx.textAlign = "right";
+        this.ctx.fillText("DEFENSE READY (P)", watergirlX, watergirlY);
+      }
+    }
   }
 
   drawUltimateIndicators() {
@@ -1292,7 +1484,7 @@ class Fireboy extends Character {
       this.shoot("fireball", window.game);
     }
     // Ultimate shooting
-    if (keys["Shift"] && window.game.ultimateReady.fireboy) {
+    if ((keys["ShiftLeft"] || keys["ShiftRight"]) && window.game.ultimateReady.fireboy) {
       this.shootUltimate("fireball", window.game);
       window.game.ultimateReady.fireboy = false;
       window.game.ultimateCooldown.fireboy = 10000; // 10 second cooldown
@@ -1327,7 +1519,7 @@ class Watergirl extends Character {
       this.shoot("waterball", window.game);
     }
     // Ultimate shooting
-    if (keys["Shift"] && window.game.ultimateReady.watergirl) {
+    if ((keys["ShiftLeft"] || keys["ShiftRight"]) && window.game.ultimateReady.watergirl) {
       this.shootUltimate("waterball", window.game);
       window.game.ultimateReady.watergirl = false;
       window.game.ultimateCooldown.watergirl = 10000; // 10 second cooldown
@@ -1746,6 +1938,73 @@ class PowerUp {
       ctx.closePath();
       ctx.stroke();
     }
+  }
+}
+
+class DefenseBarrier {
+  constructor(x, y, defender) {
+    this.x = x;
+    this.y = y;
+    this.width = 100; // Wider barrier
+    this.height = 4; // Very thin barrier
+    this.defender = defender; // 'fireboy' or 'watergirl'
+    this.alpha = 0.8;
+    this.active = true;
+  }
+
+  update(deltaTime) {
+    // Barrier stays active as long as the key is held
+    return this.active;
+  }
+
+  checkCollision(projectile) {
+    // Check if projectile hits the defense barrier
+    return (
+      projectile.x < this.x + this.width &&
+      projectile.x + projectile.width > this.x &&
+      projectile.y < this.y + this.height &&
+      projectile.y + projectile.height > this.y
+    );
+  }
+
+  render(ctx) {
+    if (!this.active) return;
+
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+
+    // Create thin barrier with character's element
+    const gradient = ctx.createLinearGradient(
+      this.x, this.y,
+      this.x + this.width, this.y + this.height
+    );
+
+    if (this.defender === "fireboy") {
+      // Fire barrier
+      gradient.addColorStop(0, "#ff0000");
+      gradient.addColorStop(0.3, "#ff6b35");
+      gradient.addColorStop(0.7, "#ff8c42");
+      gradient.addColorStop(1, "#ff0000");
+    } else {
+      // Water barrier
+      gradient.addColorStop(0, "#0000ff");
+      gradient.addColorStop(0.3, "#4a90e2");
+      gradient.addColorStop(0.7, "#6bb6ff");
+      gradient.addColorStop(1, "#0000ff");
+    }
+
+    // Draw the thin barrier
+    ctx.fillStyle = gradient;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+    // Add glow effect
+    const time = Date.now() * 0.01;
+    const glow = Math.sin(time * 2) * 0.3 + 0.7;
+    ctx.shadowColor = this.defender === "fireboy" ? "#ff6b35" : "#4a90e2";
+    ctx.shadowBlur = 10 * glow;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+    ctx.restore();
   }
 }
 
