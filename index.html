@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fireboy vs Watergirl - Battle Arena</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="gameContainer">
+      <div id="gameHeader">
+        <h1>Fireboy vs Watergirl</h1>
+        <div id="gameInfo">
+          <div id="levelInfo">Level: <span id="currentLevel">1</span></div>
+          <div id="modeInfo">
+            Mode: <span id="currentMode">Competitive</span>
+          </div>
+          <div id="scoreInfo">
+            <span id="fireboyScore">Fireboy: 0</span>
+            <span id="watergirlScore">Watergirl: 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="gameArea">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <div id="gameUI">
+          <div id="instructions">
+            <h3>Controls:</h3>
+            <p>
+              <strong>Fireboy:</strong> WASD to move, Space to shoot fireball
+            </p>
+            <p>
+              <strong>Watergirl:</strong> Arrow keys to move, Enter to shoot
+              waterball
+            </p>
+            <p>
+              <strong>Objective:</strong>
+              <span id="objectiveText">Defeat your opponent!</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div id="gameControls">
+        <button id="startBtn">Start Game</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn">Reset Level</button>
+        <button id="nextLevelBtn" style="display: none">Next Level</button>
+      </div>
+
+      <div id="gameOverScreen" class="hidden">
+        <div id="gameOverContent">
+          <h2 id="gameOverTitle">Game Over</h2>
+          <p id="gameOverMessage">Fireboy Wins!</p>
+          <button id="restartBtn">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
